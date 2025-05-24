@@ -1,0 +1,46 @@
+import { z } from "zod";
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
+
+import { EyeUpdateType, Vec3Schema } from "@/domain/event";
+
+type Vec3 = z.infer<typeof Vec3Schema>;
+
+interface eyeStoreState {
+  eyes: Record<string, { p: Vec3; t: number }>;
+}
+
+interface EyeStoreActions {
+  setEye: (eyeUpdate: EyeUpdateType) => void;
+  removeStaleEyes: (thresholdMs: number) => void;
+}
+
+// Augment the Window interface for the debug store
+declare global {
+  interface Window {
+    __eyeStore?: typeof useEyeStore;
+  }
+}
+
+export const useEyeStore = create<eyeStoreState & EyeStoreActions>()(
+  immer((set) => ({
+    eyes: {},
+    setEye: (eyeUpdate) =>
+      set((state) => {
+        state.eyes[eyeUpdate.id] = { p: eyeUpdate.p, t: eyeUpdate.t };
+      }),
+    removeStaleEyes: (thresholdMs) =>
+      set((state) => {
+        const now = Date.now();
+        for (const id in state.eyes) {
+          if (now - state.eyes[id].t > thresholdMs) {
+            delete state.eyes[id];
+          }
+        }
+      }),
+  })),
+);
+
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  window.__eyeStore = useEyeStore;
+}

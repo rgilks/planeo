@@ -29,9 +29,9 @@ export const FallingCubes = () => {
     for (let i = 0; i < CUBE_COUNT; i++) {
       tempCubes.push({
         position: [
-          (Math.random() - 0.5) * 20, // Spread around origin X
+          (Math.random() - 0.5) * 40, // Spread around origin X
           GROUND_Y_POSITION + Math.random() * 10 + 10, // Start above the ground
-          (Math.random() - 0.5) * 20, // Spread around origin Z
+          (Math.random() - 0.5) * 40, // Spread around origin Z
         ],
         size: [
           Math.random() * 2 + 15, // Size relative to eye radius (8 * 2 = 16)

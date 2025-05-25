@@ -1,7 +1,16 @@
 "use client";
 import { useFrame, useLoader } from "@react-three/fiber";
+import { type RapierRigidBody } from "@react-three/rapier";
 import { useRef, useEffect, useMemo } from "react";
-import { Group, TextureLoader, ShaderMaterial, Vector3 } from "three";
+import React from "react";
+import {
+  TextureLoader,
+  ShaderMaterial,
+  Vector3,
+  Euler,
+  Quaternion,
+  Matrix4,
+} from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { useEventStore } from "@/stores/eventStore";
@@ -34,7 +43,9 @@ const fragmentShader = `
 `;
 
 export const Eyes = ({ myId }: { myId: string }) => {
-  const refs = useRef<Record<string, Group>>({});
+  const refs = useRef<Record<string, React.RefObject<RapierRigidBody | null>>>(
+    {},
+  );
   const eyeTexture = useLoader(TextureLoader, EYE_TEXTURE_PATH);
 
   const managedEyes = useEyesStore((s) => s.managedEyes);
@@ -63,83 +74,109 @@ export const Eyes = ({ myId }: { myId: string }) => {
     }
   }, [eyesFromEventStore, myId, baseShaderMaterial, syncEyes]);
 
+  // Ensure refs are created for new eyes and cleaned up for removed eyes
+  useEffect(() => {
+    const currentKeys = Object.keys(refs.current);
+    const managedKeys = Object.keys(managedEyes);
+
+    managedKeys.forEach((id) => {
+      if (!refs.current[id]) {
+        refs.current[id] = React.createRef<RapierRigidBody | null>();
+      }
+    });
+
+    currentKeys.forEach((id) => {
+      if (!managedEyes[id]) {
+        delete refs.current[id];
+      }
+    });
+  }, [managedEyes]);
+
   useFrame((_, delta) => {
     updateEyeAnimations(delta);
 
-    const activeEyeIds = new Set(Object.keys(managedEyes));
-    for (const refId in refs.current) {
-      if (!activeEyeIds.has(refId)) {
-        delete refs.current[refId];
-      }
-    }
-
     for (const id in managedEyes) {
-      const eye: ManagedEye = managedEyes[id];
-      const group = refs.current[id];
+      const eyeData = managedEyes[id];
+      const rigidBodyRef = refs.current[id];
+      const rigidBody = rigidBodyRef?.current;
 
-      if (!group) continue;
+      if (!rigidBody) continue;
 
-      group.position.set(eye.position.x, EYE_Y_POSITION, eye.position.z);
-
-      if (id !== myId && eye.lookAt) {
-        // All console.log statements related to debugging pitch/yaw will be removed here.
+      const rbTranslation = rigidBody.translation();
+      const currentPositionVec = new Vector3(
+        rbTranslation.x,
+        rbTranslation.y,
+        rbTranslation.z,
+      );
+      const targetPosition = new Vector3(
+        eyeData.position.x,
+        EYE_Y_POSITION,
+        eyeData.position.z,
+      );
+      if (currentPositionVec.distanceTo(targetPosition) > 0.001) {
+        rigidBody.setNextKinematicTranslation(targetPosition);
       }
 
-      if (eye.lookAt && !eye.lookAt.equals(group.position)) {
-        const targetDirection = new Vector3();
-        targetDirection.subVectors(eye.lookAt, group.position);
-        targetDirection.normalize();
+      if (eyeData.lookAt) {
+        const targetRotation = new Quaternion();
+        const tempLookAtPosition = new Vector3().copy(eyeData.lookAt);
+        const eyePosition = new Vector3(
+          rbTranslation.x,
+          EYE_Y_POSITION,
+          rbTranslation.z,
+        );
 
-        const tdx = targetDirection.x;
-        const tdy = targetDirection.y;
-        const tdz = targetDirection.z;
+        const m4 = new Matrix4();
+        m4.lookAt(eyePosition, tempLookAtPosition, new Vector3(0, 1, 0));
+        targetRotation.setFromRotationMatrix(m4);
 
-        let yaw = Math.atan2(tdx, tdz);
-        yaw += Math.PI; // Add 180 degrees to yaw to flip direction
-
-        const horizontalDist = Math.sqrt(tdx * tdx + tdz * tdz);
-
-        let pitch = 0;
-        if (horizontalDist > 0.0001) {
-          pitch = Math.atan2(-tdy, horizontalDist);
-        } else {
-          pitch = tdy > 0 ? -Math.PI / 2 : Math.PI / 2;
+        const currentRotationQuat = rigidBody.rotation();
+        const currentRotation = new Quaternion(
+          currentRotationQuat.x,
+          currentRotationQuat.y,
+          currentRotationQuat.z,
+          currentRotationQuat.w,
+        );
+        if (!currentRotation.equals(targetRotation)) {
+          rigidBody.setNextKinematicRotation(targetRotation);
         }
-
-        group.rotation.set(pitch, yaw, 0, "YXZ");
-
-        // Revert to Object3D.lookAt(), ensuring up vector is explicitly set.
-        group.up.set(0, 1, 0);
-        group.lookAt(eye.lookAt);
       } else {
-        // Fallback orientation
-        group.up.set(0, 1, 0); // Also set up for fallback
-        const fallbackTarget = group.position.clone().add(new Vector3(0, 0, 1)); // Look along +Z
-        group.lookAt(fallbackTarget);
+        const fallbackRotation = new Quaternion().setFromEuler(
+          new Euler(0, 0, 0),
+        );
+        const currentRotationQuat = rigidBody.rotation();
+        const currentRotation = new Quaternion(
+          currentRotationQuat.x,
+          currentRotationQuat.y,
+          currentRotationQuat.z,
+          currentRotationQuat.w,
+        );
+        if (!currentRotation.equals(fallbackRotation)) {
+          rigidBody.setNextKinematicRotation(fallbackRotation);
+        }
       }
 
-      // Opacity and scale updates
-      if (eye.material.uniforms["uOpacity"].value !== eye.opacity) {
-        eye.material.uniforms["uOpacity"].value = eye.opacity;
+      // Opacity updates still happen via material directly
+      if (eyeData.material.uniforms["uOpacity"].value !== eyeData.opacity) {
+        eyeData.material.uniforms["uOpacity"].value = eyeData.opacity;
       }
-      if (group.scale.x !== eye.scale) {
-        group.scale.set(eye.scale, eye.scale, eye.scale);
-      }
+      // Scale is not directly on RigidBody. This would need a different approach,
+      // e.g., scaling the mesh child of the RigidBody.
     }
   });
 
   return (
     <>
-      {Object.values(managedEyes).map((eye: ManagedEye) => (
-        <Eye
-          key={eye.id}
-          eye={eye}
-          // remoteKey={remoteKeys[eye.id]}
-          groupRef={(el) => {
-            if (el) refs.current[eye.id] = el;
-          }}
-        />
-      ))}
+      {Object.values(managedEyes).map((eye: ManagedEye) => {
+        // Ref creation is handled in useEffect
+        const rigidBodyRef = refs.current[eye.id];
+        // It's possible the ref might not be there yet if managedEyes updated
+        // and this render happens before the useEffect for refs runs,
+        // or if an eye is quickly added and removed.
+        if (!rigidBodyRef) return null;
+
+        return <Eye key={eye.id} eye={eye} rigidBodyRef={rigidBodyRef} />;
+      })}
     </>
   );
 };

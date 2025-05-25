@@ -13,7 +13,6 @@ import { useInputControlStore } from "@/stores/inputControlStore";
 import { useMessageStore } from "@/stores/messageStore";
 import { Eyes } from "@components/Eyes";
 import { FallingCubes } from "@components/FallingCubes";
-import { AsphericalObject } from "@components/AsphericalObject";
 
 const DOWNSCALED_WIDTH = 320;
 const DOWNSCALED_HEIGHT = 200;
@@ -195,7 +194,6 @@ const Scene = ({ myId }: { myId: string }) => {
       <Physics>
         <CanvasContent myId={myId} />
         <FallingCubes />
-        <AsphericalObject />
       </Physics>
     </Canvas>
   );

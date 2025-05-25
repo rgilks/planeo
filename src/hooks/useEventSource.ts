@@ -2,17 +2,18 @@
 import { useEffect } from "react";
 
 import { useEventStore } from "@/stores/eventStore";
-import { useSymbolStore } from "@/stores/symbolStore";
+import { useMessageStore } from "@/stores/messageStore";
 
-import type { SymbolEventType } from "@/domain/event"; // Ensure path and type name are correct
-import type { State as SymbolState } from "@/stores/symbolStore";
+import type { ChatMessageEventType } from "@/domain/event";
 
 export const useEventSource = (myId: React.RefObject<string>) => {
   const connectToEventSource = useEventStore((s) => s.connect);
-  const subscribeToSymbolEvents = useEventStore((s) => s.subscribeSymbolEvents);
+  const subscribeToChatMessageEvents = useEventStore(
+    (s) => s.subscribeChatMessageEvents,
+  );
   const eventSourceConnected = useEventStore((s) => s.isConnected);
 
-  const setRemoteKey = useSymbolStore((s: SymbolState) => s.setRemoteKey);
+  const addMessage = useMessageStore((s) => s.addMessage);
 
   useEffect(() => {
     // Attempt to connect to the EventSource when the hook mounts
@@ -23,13 +24,14 @@ export const useEventSource = (myId: React.RefObject<string>) => {
   }, [connectToEventSource, eventSourceConnected]);
 
   useEffect(() => {
-    const handleSymbolEvent = (event: SymbolEventType) => {
-      if (event.id !== myId.current) {
-        setRemoteKey(event.id, event.key);
-      }
+    const handleChatMessageEvent = (event: ChatMessageEventType) => {
+      if (event.userId === myId.current) return;
+      addMessage(event);
     };
 
-    const unsubscribe = subscribeToSymbolEvents(handleSymbolEvent);
-    return () => unsubscribe();
-  }, [subscribeToSymbolEvents, myId, setRemoteKey]);
+    const unsubscribeChat = subscribeToChatMessageEvents(
+      handleChatMessageEvent,
+    );
+    return () => unsubscribeChat();
+  }, [subscribeToChatMessageEvents, addMessage, myId]);
 };

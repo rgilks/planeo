@@ -10,6 +10,7 @@
 
 ## Recent Developments
 
+- **Chat Functionality (2025-05-25):** Users can now send and receive messages in a chat window. Messages are displayed with user identifiers and timestamps.
 - **Keyboard-Only Look Controls (2025-05-25):** Player look (camera orientation) is now controlled exclusively by keyboard. A/D keys or Left/Right arrow keys rotate the view left/right (yaw). Mouse look has been disabled. W/S or Up/Down arrow keys move forward/backward relative to the current view direction.
 - **Arrow Key Navigation (2025-05-25):** Users can now move their viewpoint (eye) around the plane using the arrow keys (up, down, left, right) in addition to WASD controls. These movements are broadcast to other connected users in real-time.
 - **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes. More details can be found in `docs/rendering_issues.md`.

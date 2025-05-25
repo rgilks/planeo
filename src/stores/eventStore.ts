@@ -1,11 +1,17 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import { EventSchema, SymbolEventType, EyeUpdateType } from "@/domain/event";
+import {
+  EventSchema,
+  SymbolEventType,
+  EyeUpdateType,
+  ChatMessageEventType,
+} from "@/domain/event";
 
 // Define listener types
 type SymbolEventListener = (event: SymbolEventType) => void;
 type EyeUpdateEventListener = (event: EyeUpdateType) => void;
+type ChatMessageEventListener = (event: ChatMessageEventType) => void;
 
 // Augment the Window interface for the debug store
 declare global {
@@ -21,6 +27,7 @@ interface EventStoreState {
   listeners: {
     symbol: SymbolEventListener[];
     eyeUpdate: EyeUpdateEventListener[];
+    chatMessage: ChatMessageEventListener[];
   };
   cachedEyeUpdates: EyeUpdateType[];
 }
@@ -30,6 +37,9 @@ interface EventStoreActions {
   disconnect: () => void;
   subscribeSymbolEvents: (callback: SymbolEventListener) => () => void;
   subscribeEyeUpdates: (callback: EyeUpdateEventListener) => () => void;
+  subscribeChatMessageEvents: (
+    callback: ChatMessageEventListener,
+  ) => () => void;
   _handleMessage: (event: MessageEvent) => void;
   _handleError: (event: Event) => void;
 }
@@ -42,6 +52,7 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     listeners: {
       symbol: [],
       eyeUpdate: [],
+      chatMessage: [],
     },
     cachedEyeUpdates: [],
 
@@ -122,6 +133,19 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       };
     },
 
+    subscribeChatMessageEvents: (callback: ChatMessageEventListener) => {
+      set((state) => {
+        state.listeners.chatMessage.push(callback);
+      });
+      return () => {
+        set((state) => {
+          state.listeners.chatMessage = state.listeners.chatMessage.filter(
+            (cb) => cb !== callback,
+          );
+        });
+      };
+    },
+
     _handleMessage: (event: MessageEvent) => {
       try {
         const rawData = JSON.parse(event.data);
@@ -144,6 +168,10 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
                 callback(data as EyeUpdateType),
               );
             }
+          } else if (data.type === "chatMessage") {
+            [...get().listeners.chatMessage].forEach((callback) =>
+              callback(data as ChatMessageEventType),
+            );
           }
         } else {
           console.error(

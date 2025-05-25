@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MessageSchema } from "./message";
+
 export const Vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
 export type Vec3 = z.infer<typeof Vec3Schema>;
 
@@ -20,10 +22,17 @@ export const EyeUpdateSchema = z.object({
 });
 export type EyeUpdateType = z.infer<typeof EyeUpdateSchema>; // This is EventEyeUpdateType
 
+// Schema for chat messages broadcast over EventSource
+export const ChatMessageEventSchema = MessageSchema.extend({
+  type: z.literal("chatMessage"),
+});
+export type ChatMessageEventType = z.infer<typeof ChatMessageEventSchema>;
+
 // General Event Schema using the base EyeUpdateSchema
 export const EventSchema = z.discriminatedUnion("type", [
   SymbolEventSchema,
   EyeUpdateSchema,
+  ChatMessageEventSchema,
 ]);
 export type EventType = z.infer<typeof EventSchema>;
 

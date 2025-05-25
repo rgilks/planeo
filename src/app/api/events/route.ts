@@ -82,6 +82,8 @@ export const POST = async (req: NextRequest) => {
     }
   } else if (eventData.type === "symbol") {
     broadcast(eventData);
+  } else if (eventData.type === "chatMessage") {
+    broadcast(eventData);
   }
 
   return NextResponse.json({ ok: true });

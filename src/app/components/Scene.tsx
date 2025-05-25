@@ -1,16 +1,12 @@
 import { Grid } from "@react-three/drei";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { nanoid } from "nanoid";
 import { useRef, useEffect } from "react";
 import { Vector3 } from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
-import {
-  useEventSource,
-  useInputThrottle,
-  useEyePositionReporting,
-} from "@/hooks";
+import { useEventSource, useEyePositionReporting } from "@/hooks";
+import { useInputControlStore } from "@/stores/inputControlStore";
 import { Eyes } from "@components/Eyes";
 
 // Basic keyboard state
@@ -35,6 +31,7 @@ const CanvasContent = ({ myId }: { myId: string }) => {
   const { camera } = useThree();
   useEyePositionReporting(myId, camera);
   const keyboard = useKeyboardControls();
+  const isChatInputFocused = useInputControlStore((s) => s.isChatInputFocused);
 
   const zoomSpeed = 0.5;
   const rotationSpeed = 0.03;
@@ -51,27 +48,29 @@ const CanvasContent = ({ myId }: { myId: string }) => {
     let didMove = false;
     let didRotate = false;
 
-    if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
-      camera.rotation.y += rotationSpeed;
-      didRotate = true;
-    }
-    if (keyboard.current["d"] || keyboard.current["arrowright"]) {
-      camera.rotation.y -= rotationSpeed;
-      didRotate = true;
-    }
+    if (!isChatInputFocused) {
+      if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
+        camera.rotation.y += rotationSpeed;
+        didRotate = true;
+      }
+      if (keyboard.current["d"] || keyboard.current["arrowright"]) {
+        camera.rotation.y -= rotationSpeed;
+        didRotate = true;
+      }
 
-    if (didRotate) {
-      camera.rotation.x = 0;
-      camera.rotation.z = 0;
-    }
+      if (didRotate) {
+        camera.rotation.x = 0;
+        camera.rotation.z = 0;
+      }
 
-    if (keyboard.current["w"] || keyboard.current["arrowup"]) {
-      camera.position.addScaledVector(direction, zoomSpeed);
-      didMove = true;
-    }
-    if (keyboard.current["s"] || keyboard.current["arrowdown"]) {
-      camera.position.addScaledVector(direction, -zoomSpeed);
-      didMove = true;
+      if (keyboard.current["w"] || keyboard.current["arrowup"]) {
+        camera.position.addScaledVector(direction, zoomSpeed);
+        didMove = true;
+      }
+      if (keyboard.current["s"] || keyboard.current["arrowdown"]) {
+        camera.position.addScaledVector(direction, -zoomSpeed);
+        didMove = true;
+      }
     }
 
     if (camera.position.y !== EYE_Y_POSITION) {
@@ -129,11 +128,13 @@ const CanvasContent = ({ myId }: { myId: string }) => {
   );
 };
 
-const Scene = () => {
-  const myId = useRef(nanoid(6));
+const Scene = ({ myId }: { myId: string }) => {
+  const myIdRef = useRef(myId);
+  useEffect(() => {
+    myIdRef.current = myId;
+  }, [myId]);
 
-  useEventSource(myId);
-  useInputThrottle(myId);
+  useEventSource(myIdRef);
 
   return (
     <Canvas
@@ -142,7 +143,7 @@ const Scene = () => {
       shadows
     >
       <color attach="background" args={["#000"]} />
-      <CanvasContent myId={myId.current} />
+      <CanvasContent myId={myId} />
     </Canvas>
   );
 };

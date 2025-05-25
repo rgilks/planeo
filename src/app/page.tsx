@@ -1,36 +1,48 @@
 "use client";
 
-import { useEffect } from "react";
+import { nanoid } from "nanoid";
+import { useRef } from "react";
 
-import { useSymbolStore } from "@/stores/symbolStore";
+// import { useEffect } from "react"; // No longer needed if SymbolHandler is gone
+
+// import { useSymbolStore } from "@/stores/symbolStore"; // No longer needed
+import { ChatWindow } from "@/components/ChatWindow";
 import Scene from "@components/Scene";
-import SymbolDisplay from "@components/Symbol";
+// import SymbolDisplay from "@components/Symbol"; // Removed import
 
-const SymbolHandler = ({ children }: { children: React.ReactNode }) => {
-  const setLastInput = useSymbolStore((s) => s.setLastInput);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      setLastInput({ key: e.key });
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setLastInput]);
-
-  return <>{children}</>;
-};
+// const SymbolHandler = ({ children }: { children: React.ReactNode }) => { // Removed SymbolHandler
+//   useEffect(() => {
+//   }, []);
+//   return <>{children}</>;
+// };
 
 const HomePage = () => {
+  const myId = useRef(nanoid(6)).current;
+
   return (
-    <SymbolHandler>
+    <>
       <main className="flex min-h-screen flex-col items-center justify-center bg-[#111119]">
         <div className="w-full h-screen">
-          <Scene />
+          <Scene myId={myId} />
         </div>
       </main>
-      <SymbolDisplay />
-    </SymbolHandler>
+      {/* <SymbolDisplay /> */}
+      {/* Removed SymbolDisplay component */}
+      <div
+        style={{
+          position: "fixed",
+          right: "10px",
+          top: "10px",
+          height: "calc(100vh - 20px)",
+          width: "300px",
+          zIndex: 1001,
+          borderRadius: "8px",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+        }}
+      >
+        <ChatWindow myId={myId} />
+      </div>
+    </>
   );
 };
 

@@ -5,11 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { generateAiVisionResponse } from "@/app/actions/generateMessage";
 import { EventSchema } from "@/domain";
+import { AI_USER_ID } from "@/domain/aiConstants";
 import {
   ValidatedEyeUpdatePayloadSchema,
   AiVisionEventType,
 } from "@/domain/event";
-import { AI_USER_ID } from "@/hooks/useAiChat";
 
 import { broadcast, setEye, subscribe, unsubscribe } from "./sseStore";
 

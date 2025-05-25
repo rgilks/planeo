@@ -3,9 +3,8 @@
 import { useEffect, useRef } from "react";
 
 import { generateAiChatMessage } from "@/app/actions/generateMessage";
+import { AI_USER_ID } from "@/domain/aiConstants";
 import { useMessageStore } from "@/stores/messageStore";
-
-export const AI_USER_ID = "🤖-ai-companion";
 
 export const useAiChat = (myId: string) => {
   const messages = useMessageStore((s) => s.messages);

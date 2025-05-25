@@ -25,7 +25,13 @@ export const useEventSource = (myId: React.RefObject<string>) => {
 
   useEffect(() => {
     const handleChatMessageEvent = (event: ChatMessageEventType) => {
-      if (event.userId === myId.current) return;
+      console.log("[EventSource Hook] Received chat message event:", event);
+      console.log("[EventSource Hook] Current myId:", myId.current);
+      if (event.userId === myId.current) {
+        console.log("[EventSource Hook] Ignoring own message.");
+        return;
+      }
+      console.log("[EventSource Hook] Adding message to store:", event);
       addMessage(event);
     };
 

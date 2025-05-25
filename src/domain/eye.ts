@@ -15,6 +15,7 @@ export const EyeStateSchema = z.object({
   scale: z.number(),
   status: EyeStatusSchema,
   material: z.instanceof(ShaderMaterial),
+  conversationalTargetId: z.string().optional(),
 });
 export type EyeState = z.infer<typeof EyeStateSchema>;
 

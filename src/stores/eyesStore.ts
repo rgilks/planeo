@@ -12,6 +12,8 @@ import {
 } from "@/domain/eye"; // Assuming path, adjust if necessary
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 
+const CONVERSATION_DISTANCE_THRESHOLD = 5; // Example threshold, adjust as needed
+
 type EyesState = {
   managedEyes: Record<string, EyeState>;
 };
@@ -91,7 +93,54 @@ export const useEyesStore = create<EyesState & EyesActions>()(
               scale: INITIAL_SCALE,
               status: "appearing" as EyeStatus,
               material: baseShaderMaterial.clone(),
+              conversationalTargetId: undefined, // Initialize with no target
             };
+          }
+        }
+
+        // Conversational logic
+        const eyeIds = Object.keys(state.managedEyes).filter(
+          (id) => id !== myId,
+        );
+        for (let i = 0; i < eyeIds.length; i++) {
+          const eye1 = state.managedEyes[eyeIds[i]];
+          if (!eye1 || eye1.status === "disappearing") continue;
+
+          // Clear previous conversational target if the target is gone or too far
+          if (eye1.conversationalTargetId) {
+            const targetEye = state.managedEyes[eye1.conversationalTargetId];
+            if (
+              !targetEye ||
+              targetEye.status === "disappearing" ||
+              eye1.position.distanceTo(targetEye.position) >
+                CONVERSATION_DISTANCE_THRESHOLD
+            ) {
+              eye1.conversationalTargetId = undefined;
+            }
+          }
+
+          // Find a new conversational target if not already in one
+          if (!eye1.conversationalTargetId) {
+            for (let j = 0; j < eyeIds.length; j++) {
+              if (i === j) continue;
+              const eye2 = state.managedEyes[eyeIds[j]];
+              if (
+                !eye2 ||
+                eye2.status === "disappearing" ||
+                eye2.conversationalTargetId
+              )
+                continue; // Don't target an eye already in a conversation
+
+              if (
+                eye1.position.distanceTo(eye2.position) <
+                CONVERSATION_DISTANCE_THRESHOLD
+              ) {
+                eye1.conversationalTargetId = eye2.id;
+                // Optionally, make it a two-way conversation immediately, or let the other eye pick it up in its iteration.
+                // For simplicity, we'll let the other eye pick it up.
+                break;
+              }
+            }
           }
         }
 
@@ -115,6 +164,20 @@ export const useEyesStore = create<EyesState & EyesActions>()(
             eye.position.lerp(eye.targetPosition, 0.05);
             eye.position.y = EYE_Y_POSITION;
             changed = true;
+          }
+
+          // Gaze at conversational target if one exists
+          if (eye.conversationalTargetId) {
+            const targetEye = state.managedEyes[eye.conversationalTargetId];
+            if (targetEye && targetEye.status !== "disappearing") {
+              // Look at the center of the target eye.
+              // For pupil-specific targeting, we'd need pupil position within the eye.
+              // This is a simplification.
+              eye.targetLookAt.copy(targetEye.position);
+            } else {
+              // Target is gone or disappearing, clear it
+              eye.conversationalTargetId = undefined;
+            }
           }
 
           if (!eye.lookAt.equals(eye.targetLookAt)) {

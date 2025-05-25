@@ -4,10 +4,10 @@ import React from "react";
 import { Group, Vector3 } from "three";
 
 import { SYMBOLS } from "@/domain";
+import { EYE_RADIUS } from "@/domain/sceneConstants";
 import { ManagedEye } from "@/stores/eyesStore";
 import { RemoteKeyState } from "@/stores/symbolStore";
 
-const EYE_RADIUS = 8;
 const GREEN = "#00FF41";
 const TEXT_FADE_DURATION_MS = 2000;
 

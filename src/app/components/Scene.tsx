@@ -81,7 +81,7 @@ const Scene = () => {
 
   return (
     <Canvas
-      camera={{ position: [0, 20, 120], near: 0.1, far: 4000 }}
+      camera={{ position: [0, 20, 120], near: 1, far: 2500 }}
       style={{ width: "100%", height: "100%" }}
       shadows
     >

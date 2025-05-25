@@ -43,7 +43,7 @@ export const getGoogleAIClient = async (): Promise<GoogleGenAI> => {
   } catch (error) {
     console.error(
       "[GoogleAI Client] Failed to initialize GoogleGenAI client:",
-      error,
+      error
     );
     throw error;
   }
@@ -71,11 +71,11 @@ export type AIConfigOverrides = Partial<GenerationConfig>;
 
 export async function callAIForStory(
   prompt: string,
-  configOverrides?: AIConfigOverrides,
+  configOverrides?: AIConfigOverrides
 ): Promise<string | undefined> {
   console.log("[AI Service] Calling AI for text-based story/chat...");
   console.log(
-    `[AI Service] Prompt (first 200 chars): ${prompt.substring(0, 200)}${prompt.length > 200 ? "..." : ""}`,
+    `[AI Service] Prompt (first 200 chars): ${prompt.substring(0, 200)}${prompt.length > 200 ? "..." : ""}`
   );
 
   const genAI: GoogleGenAI = await getGoogleAIClient();
@@ -132,7 +132,7 @@ export const generatMessagesAction = async () => {};
 
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
-  aiUserId: string,
+  aiUserId: string
 ): Promise<Message | undefined> => {
   console.log(`[AI Action] Generating AI Chat Message for ${aiUserId}...`);
   const agent = getAIAgentById(aiUserId); // Get agent details
@@ -168,7 +168,7 @@ export const generateAiChatMessage = async (
       const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
       if (!appUrl) {
         console.error(
-          "[AI Action] ERROR: NEXT_PUBLIC_APP_URL is not defined. Cannot post AI message to event stream.",
+          "[AI Action] ERROR: NEXT_PUBLIC_APP_URL is not defined. Cannot post AI message to event stream."
         );
       } else {
         fetch(`${appUrl}/api/events`, {
@@ -187,7 +187,7 @@ export const generateAiChatMessage = async (
   } catch (error) {
     console.error(
       "[AI Action] Error generating AI message:",
-      error instanceof Error ? error.stack : error,
+      error instanceof Error ? error.stack : error
     );
     return undefined;
   }
@@ -197,7 +197,7 @@ export const generateAiChatMessage = async (
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
-  chatHistory: ChatHistory,
+  chatHistory: ChatHistory
 ): Promise<ParsedAIResponse | undefined> => {
   console.log(`[AI Action & Chat] Generating for agent ${aiAgentId}...`);
 
@@ -218,7 +218,7 @@ export const generateAiActionAndChat = async (
     if (!fs.existsSync(debugImagesDir)) {
       fs.mkdirSync(debugImagesDir, { recursive: true });
       console.log(
-        `[AI Action & Chat] Created debug_images directory: ${debugImagesDir}`,
+        `[AI Action & Chat] Created debug_images directory: ${debugImagesDir}`
       );
     }
     const imageName = `${aiAgentId}_${Date.now()}.png`;
@@ -226,17 +226,17 @@ export const generateAiActionAndChat = async (
     const imageBuffer = Buffer.from(base64ImageData, "base64");
     fs.writeFileSync(imagePath, imageBuffer);
     console.log(
-      `[AI Action & Chat] Saved debug image for ${aiAgentId} to ${imagePath}`,
+      `[AI Action & Chat] Saved debug image for ${aiAgentId} to ${imagePath}`
     );
   } catch (error) {
     console.error(
       `[AI Action & Chat] Failed to save debug image for ${aiAgentId}:`,
-      error,
+      error
     );
   }
   // --- END: Save debug image ---
 
-  const historySlice = chatHistory.slice(-10); // Slightly longer history for context
+  const historySlice = chatHistory.slice(-10);
 
   // System prompt instructing the AI about its environment, capabilities, and desired JSON output
   const systemPrompt = `You are ${agentDisplayName}. You have suddenly materialized in this place.
@@ -246,8 +246,11 @@ You feel a little disoriented and cautious, perhaps a bit afraid.
 You are not alone. There may be other beings in this scene. Try to communicate with them.
 You can see them as floating eyes. You can also try to look at them.
 
+There are also numerous cubes scattered around. These are just simple cubes.
+More interestingly, there is a distinct aspherical object in the scene: a purple torus (like a donut). Try to find it and comment on it if you see it. It is different from the cubes.
+
 Communicate your thoughts, observations (based on what you see), and feelings in brief chat messages as you try to understand your surroundings.
-What are you thinking? What are you feeling based on your current view?
+What are you thinking? What are you feeling based on your current view? Pay special attention to the purple torus if it's visible.
 
 You can also move and look. Possible actions are:
 - Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares }
@@ -329,7 +332,7 @@ Your response:`;
 
   try {
     console.log(
-      `[AI Action & Chat Service] Calling Vision AI model for ${agentDisplayName} expecting JSON...`,
+      `[AI Action & Chat Service] Calling Vision AI model for ${agentDisplayName} expecting JSON...`
     );
     const result = await genAI.models.generateContent(request);
     const aiResponseText = result.text;
@@ -337,7 +340,7 @@ Your response:`;
     if (aiResponseText) {
       console.log(
         `[AI Action & Chat Service] Raw response for ${agentDisplayName}:`,
-        aiResponseText,
+        aiResponseText
       );
 
       // More robust pre-processing to remove markdown code block fences
@@ -347,14 +350,14 @@ Your response:`;
         jsonToParse = jsonToParse.substring(7, jsonToParse.length - 3).trim();
         console.log(
           `[AI Action & Chat Service] Extracted JSON from markdown (\\\`\\\`\\\`json) for ${agentDisplayName}:`,
-          jsonToParse,
+          jsonToParse
         );
       } else if (jsonToParse.startsWith("```") && jsonToParse.endsWith("```")) {
         // Fallback for cases where 'json' language specifier might be missing or different
         jsonToParse = jsonToParse.substring(3, jsonToParse.length - 3).trim();
         console.log(
           `[AI Action & Chat Service] Extracted JSON from markdown (\\\`\\\`\\\`) for ${agentDisplayName}:`,
-          jsonToParse,
+          jsonToParse
         );
       }
       // If no fences were detected, jsonToParse remains the trimmed original aiResponseText
@@ -366,7 +369,7 @@ Your response:`;
         if (validatedResponse.success) {
           console.log(
             `[AI Action & Chat Service] Successfully parsed and validated AI response for ${agentDisplayName}:`,
-            validatedResponse.data,
+            validatedResponse.data
           );
 
           // If there's a chat message, send it to the event stream
@@ -382,7 +385,7 @@ Your response:`;
             const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
             if (!appUrl) {
               console.error(
-                "[AI Action & Chat Service] ERROR: NEXT_PUBLIC_APP_URL is not defined. Cannot post AI message to event stream.",
+                "[AI Action & Chat Service] ERROR: NEXT_PUBLIC_APP_URL is not defined. Cannot post AI message to event stream."
               );
             } else {
               fetch(`${appUrl}/api/events`, {
@@ -395,7 +398,7 @@ Your response:`;
               }).catch((fetchError) => {
                 console.error(
                   "[AI Action & Chat Service] Fetch to /api/events for chat message failed:",
-                  fetchError,
+                  fetchError
                 );
               });
             }
@@ -405,7 +408,7 @@ Your response:`;
         } else {
           console.error(
             `[AI Action & Chat Service] Failed to validate AI JSON response for ${agentDisplayName}:`,
-            validatedResponse.error.flatten(),
+            validatedResponse.error.flatten()
           );
           // Attempt to provide a default "no action" if parsing fails badly
           // Also send a fallback chat message if validation fails but we have a chat string
@@ -443,7 +446,7 @@ Your response:`;
           "Raw response was:", // Log the string that failed to parse
           aiResponseText, // This is the original raw response
           "Attempted to parse:", // This is what was actually passed to JSON.parse
-          jsonToParse,
+          jsonToParse
         );
         const errorMessage: Message = {
           id: uuidv4(),
@@ -470,7 +473,7 @@ Your response:`;
       }
     }
     console.log(
-      `[AI Action & Chat Service] AI (${agentDisplayName}) did not return a response text.`,
+      `[AI Action & Chat Service] AI (${agentDisplayName}) did not return a response text.`
     );
     const speechlessMessage: Message = {
       id: uuidv4(),
@@ -494,7 +497,7 @@ Your response:`;
   } catch (error) {
     console.error(
       `[AI Action & Chat Service] Error generating AI action/chat for ${agentDisplayName}:`,
-      error instanceof Error ? error.stack : error,
+      error instanceof Error ? error.stack : error
     );
     // ... (keep existing error handling for GoogleAIError if needed) ...
     if (error instanceof Error) {
@@ -506,7 +509,7 @@ Your response:`;
       ) {
         console.error(
           "Safety feedback:",
-          gError.response.candidates[0]?.safetyRatings,
+          gError.response.candidates[0]?.safetyRatings
         );
       } else if (gError.message) {
         console.error("Error message:", gError.message);

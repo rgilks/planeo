@@ -13,6 +13,7 @@ import { useInputControlStore } from "@/stores/inputControlStore";
 import { useMessageStore } from "@/stores/messageStore";
 import { Eyes } from "@components/Eyes";
 import { FallingCubes } from "@components/FallingCubes";
+import { AsphericalObject } from "@components/AsphericalObject";
 
 const DOWNSCALED_WIDTH = 320;
 const DOWNSCALED_HEIGHT = 200;
@@ -54,7 +55,7 @@ const CanvasContent = ({ myId }: { myId: string }) => {
       const downscaledImageDataUrl = await downscaleImage(
         image,
         DOWNSCALED_WIDTH,
-        DOWNSCALED_HEIGHT,
+        DOWNSCALED_HEIGHT
       );
 
       const visionPayload = {
@@ -194,6 +195,7 @@ const Scene = ({ myId }: { myId: string }) => {
       <Physics>
         <CanvasContent myId={myId} />
         <FallingCubes />
+        <AsphericalObject />
       </Physics>
     </Canvas>
   );

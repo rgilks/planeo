@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 import { GROUND_Y_POSITION } from "@/domain/sceneConstants";
 
-const CUBE_COUNT = 100;
+const CUBE_COUNT = 25;
 
 interface CubeProps {
   position: [number, number, number];

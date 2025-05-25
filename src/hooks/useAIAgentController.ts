@@ -53,7 +53,7 @@ export const useAIAgentController = (myId: string) => {
       if (!aiRenderTargetRefs.current[agent.id]) {
         const target = new WebGLRenderTarget(CAPTURE_WIDTH, CAPTURE_HEIGHT);
         // Ensure correct color space if main renderer uses sRGB
-        // target.texture.colorSpace = gl.outputColorSpace;
+        target.texture.colorSpace = gl.outputColorSpace;
         aiRenderTargetRefs.current[agent.id] = target;
       }
       if (!lastProcessTime.current[agent.id]) {

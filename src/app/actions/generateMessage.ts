@@ -248,27 +248,28 @@ You can see them (and potentially yourself if you could see your own reflection)
 
 There are also numerous cubes scattered around. Pay attention to the shapes you see.
 
-Communicate your thoughts, observations (based on what you see), and feelings in brief chat messages as you try to understand your surroundings.
-What are you thinking? What are you feeling based on your current view? If you see other eyes, note that they are spherical and different from the cubes.
+Communicate your thoughts, observations (based on what you see), and feelings in brief chat messages.
+When you decide to send a chat message, you should also try to look at the being you are addressing.
+This helps them see your "iris and pupil" when you are "talking".
 
-You can also move and look. Possible actions are:
+Possible actions are:
 - Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares }
 - Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees }
-- LookAt: { "type": "lookAt", "targetId": "ID_of_the_other_eye_to_look_at" } // New action
+- LookAt: { "type": "lookAt", "targetId": "ID_of_the_other_eye_to_look_at" }
 - No action: { "type": "none" } or null
 
 Based on what you see, think, and feel, decide on your next chat message AND your next action.
 Your entire response MUST be a single JSON object matching this structure:
 \`\`\`json
 {
-  "chatMessage": "Your short chat message here. Example: 'Where am I?' or 'Is anyone there?'",
-  "action": { "type": "move", "direction": "forward", "distance": 1 }
+  "chatMessage": "Your short chat message here. Example: 'Where am I?' or 'Hello User-123, what are those cubes?'",
+  "action": { "type": "lookAt", "targetId": "User-123" }
 }
 \`\`\`
-If you want to look at another eye, the action would be: { "type": "lookAt", "targetId": "someEyeId" }
-If you don\'t want to perform an action, use: { "type": "none" } or null for the action.
+If you are replying to someone, use their ID (e.g., "User-123", "ai-agent-2") as the targetId for the lookAt action. You can find these IDs in the chat history.
+If you are not addressing anyone specifically or cannot determine an ID, you can use { "type": "none" } for the action, or choose another action like "move" or "turn".
 
-Previous chat history (last 10 messages):
+Previous chat history (last 10 messages - format is "SenderName (SenderID): MessageText"):
 ${historySlice
   .map((msg) => {
     const senderName =
@@ -276,7 +277,7 @@ ${historySlice
       (isAIAgentId(msg.userId)
         ? getAIAgentById(msg.userId)?.displayName || "AI"
         : "User");
-    return `${senderName}: ${msg.text}`;
+    return `${senderName} (${msg.userId}): ${msg.text}`; // Added (SenderID) here
   })
   .join("\\n")}
 

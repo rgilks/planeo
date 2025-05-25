@@ -27,6 +27,7 @@ The following features are planned for future development:
 
 ## Recent Developments
 
+- **AI Gaze Direction (2025-05-25):** AI agents will now attempt to look at the user (or other AI) they are addressing in chat. This enhances the sense of interaction by directing their "gaze" towards their interlocutor. The AI's system prompt has been updated to encourage this behavior, using the `lookAt` action with the target's ID from chat history. More details in `docs/ai_services.md` and `docs/ai-agents.md`.
 - **Enhanced Physics: Physical Eyes & Wider Cube Spread (2025-07-29):** The physics simulation has been updated. User eyeballs are now physical objects (`kinematicPosition` `RigidBody`) that can interact with and push the falling cubes. The initial scattering area for the cubes has also been quadrupled. See `docs/physics.md` for more details.
 - **Physics Integration with Falling Cubes (YYYY-MM-DD):** Added a physics simulation using `react-three-rapier`. When the scene loads, a number of randomly sized and colored cubes fall from the sky, bounce, and settle due to gravity. See `docs/physics.md` for more information.
 - **Default Visible AI Agents & Unique Identities (YYYY-MM-DD):** Implemented default visibility for two AI agents ("AI-1", "AI-2") upon loading. They now have distinct names in chat and appear as separate entities in the 3D space. The system still supports configuration via `AI_AGENTS_CONFIG` for custom setups.

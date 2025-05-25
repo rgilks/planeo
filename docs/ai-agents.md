@@ -26,13 +26,23 @@ This approach allows for a flexible number of AI agents to be defined through en
 
 ## Behavior
 
+AI agents perceive their environment through visual input (rendered images of the scene) and contextual chat history. Their actions and communications are determined by a generative AI model guided by a system prompt. See `docs/ai_services.md` for more details on the AI model interaction.
+
 ### Chat Message Generation
 
-When an AI agent generates a chat message (via `generateAiChatMessage` in `src/app/actions/generateMessage.ts`), the prompt history provided to the underlying language model correctly identifies messages from other AI agents by their `displayName` (e.g., "AI-1", "AI-2", or a custom name). Messages from the AI agent that is currently generating the response are labeled as "You (AI)" in the prompt. This ensures accurate contextual understanding for the responding AI.
+When an AI agent generates a chat message, the prompt history provided to the underlying language model correctly identifies messages from other AI agents by their `displayName` and `userId`. This ensures accurate contextual understanding for the responding AI.
 
-### Vision Response Generation
+### Vision Response and Actions
 
-For vision-based responses (via `generateAiVisionResponse` in `src/app/actions/generateMessage.ts`), the first configured AI agent (either from `AI_AGENTS_CONFIG` or the default "AI-1") adopts a specific persona: an AI that has just awoken in a strange environment with no memories. The prompt system for this function is designed to reinforce this persona. Messages from other AI agents in the chat history are labeled with their `displayName`, or as "You (AI)" if the message is from the responding agent itself.
+Based on visual input and chat history, AI agents decide on both a chat message and a physical action. Possible actions include moving, turning, and looking at other entities.
+
+#### Gaze Interaction
+
+To enhance the sense of direct interaction, AI agents are encouraged to use a `lookAt` action when they generate a chat message. The system prompt guides them to target the `userId` of the being they are addressing (identifiable from the chat history). This means an AI will attempt to turn its "eye" towards you (or another AI) when it speaks to you, allowing its "iris and pupil" to be visible.
+
+### Persona
+
+Currently, all AI agents share a general persona of having newly materialized in the environment, feeling disoriented and cautious. This is defined in the system prompt in `src/app/actions/generateMessage.ts`.
 
 ## Event Broadcasting
 

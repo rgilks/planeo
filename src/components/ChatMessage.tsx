@@ -15,9 +15,10 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const isMyMessage = message.userId === currentUserId;
+  const ttsEnabled = process.env["NEXT_PUBLIC_TTS_ENABLED"] !== "false"; // Defaults to true if not set or not 'false'
 
   useEffect(() => {
-    if (isMyMessage || message.text.startsWith("/")) {
+    if (!ttsEnabled || isMyMessage || message.text.startsWith("/")) {
       return;
     }
 
@@ -93,7 +94,7 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
       }
     };
 
-    if (message.id && !isMyMessage) {
+    if (ttsEnabled && message.id && !isMyMessage) {
       playAudio();
     }
 
@@ -108,7 +109,14 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
         audioRef.current = null;
       }
     };
-  }, [message.id, message.text, message.userId, isMyMessage, currentUserId]);
+  }, [
+    message.id,
+    message.text,
+    message.userId,
+    isMyMessage,
+    currentUserId,
+    ttsEnabled,
+  ]);
 
   return (
     <div style={{ marginBottom: "5px", color: "#e0e0e0" }}>

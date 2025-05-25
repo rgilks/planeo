@@ -12,6 +12,7 @@
 
 - **3D Environment:** Interactive 3D space built with React Three Fiber.
 - **Real-time Multi-user Interaction:** See other users' movements (represented as eyeballs) in real-time using Server-Sent Events (SSE).
+- **AI Agents:** A configurable number of AI agents inhabit the environment, capable of generating chat messages and responding to visual stimuli. Their actions are broadcast in real-time. Agent configurations are loaded from an environment variable. ([Details](/docs/ai-agents.md))
 - **Chat Functionality:** Send and receive messages in a shared chat window.
 - **Text-to-Speech (TTS):** Chat messages from other users are spoken aloud with a distinct voice for each user. ([Details](/docs/text-to-speech.md))
 - **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
@@ -27,6 +28,8 @@ The following features are planned for future development:
 
 ## Recent Developments
 
+- **Configurable AI Agents (YYYY-MM-DD):** Refactored the AI agent system to support a variable number of agents defined via the `AI_AGENTS_CONFIG` environment variable. This replaces the previously hardcoded two-agent system. See `docs/ai-agents.md` for more information.
+- **Multi-AI Agent System (YYYY-MM-DD):** Introduced two AI agents, Iris and Cyan, capable of independent chat and vision-based responses. Their activities are broadcast via the event stream. See `docs/ai-agents.md` for more information.
 - **Text-to-Speech for Chat (2025-05-25):** Implemented text-to-speech for chat messages. Messages from other users are now read aloud using distinct, consistent voices. The system utilizes Google Cloud TTS. More details can be found in `docs/text-to-speech.md`.
 - **Chat Functionality (2025-05-25):** Users can now send and receive messages in a chat window. Messages are displayed with user identifiers and timestamps.
 - **Keyboard-Only Look Controls (2025-05-25):** Player look (camera orientation) is now controlled exclusively by keyboard. A/D keys or Left/Right arrow keys rotate the view left/right (yaw). Mouse look has been disabled. W/S or Up/Down arrow keys move forward/backward relative to the current view direction.

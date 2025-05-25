@@ -41,6 +41,7 @@ When a new chat message is received, if it's not from the current user and not a
 ### Environment Variables
 
 - `GOOGLE_APP_CREDS_JSON`: **Required**. A JSON string containing the Google Cloud service account credentials necessary for the Text-to-Speech API. This should be set in your `.env.local` or server environment.
+- `NEXT_PUBLIC_TTS_ENABLED`: **Optional**. Set to `"false"` to disable Text-to-Speech functionality across the application. If not set, or set to any other value (e.g., `"true"`), TTS will be enabled by default. This is useful for disabling TTS during development, testing (e.g., end-to-end tests), or if a user wishes to globally turn off the feature via environment configuration.
 
 ## Error Handling
 
@@ -50,7 +51,7 @@ When a new chat message is received, if it's not from the current user and not a
 
 ## Future Enhancements (Potential)
 
-- User preference to disable TTS.
+- User preference to disable TTS (via UI, complementing the environment variable for global control).
 - User preference for voice selection.
 - More sophisticated rate limiting and queueing if API limits become an issue.
 - Admin panel to manage available voices.

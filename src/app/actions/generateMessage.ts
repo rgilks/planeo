@@ -9,6 +9,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
+import { isAIAgentId } from "@/domain/aiAgent";
 import { Message, MessageSchema } from "@/domain/message";
 
 let genAIClient: GoogleGenAI | null = null;
@@ -67,7 +68,10 @@ export async function callAIForStory(
   prompt: string,
   configOverrides?: AIConfigOverrides,
 ): Promise<string | undefined> {
-  console.log("[AI Service] Calling AI...");
+  console.log("[AI Service] Calling AI for text-based story/chat...");
+  console.log(
+    `[AI Service] Prompt (first 200 chars): ${prompt.substring(0, 200)}${prompt.length > 200 ? "..." : ""}`,
+  );
 
   const genAI: GoogleGenAI = await getGoogleAIClient();
 
@@ -108,6 +112,7 @@ export async function callAIForStory(
     generationConfig,
     safetySettings,
   };
+  console.log(`[AI Service] Using model: ${request.model}`);
 
   const result = await genAI.models.generateContent(request);
 
@@ -124,12 +129,12 @@ export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
   aiUserId: string,
 ): Promise<Message | undefined> => {
-  console.log("[AI Action] Generating AI Chat Message...");
+  console.log(`[AI Action] Generating AI Chat Message for ${aiUserId}...`);
 
   const historySlice = chatHistory.slice(-5);
   const prompt =
     historySlice
-      .map((msg) => `${msg.userId === aiUserId ? "AI" : "User"}: ${msg.text}`)
+      .map((msg) => `${isAIAgentId(msg.userId) ? "AI" : "User"}: ${msg.text}`)
       .join("\n") + "\nAI:";
 
   try {
@@ -164,7 +169,10 @@ export const generateAiChatMessage = async (
     console.log("[AI Action] AI did not return a response.");
     return undefined;
   } catch (error) {
-    console.error("[AI Action] Error generating AI message:", error);
+    console.error(
+      "[AI Action] Error generating AI message:",
+      error instanceof Error ? error.stack : error,
+    );
     return undefined;
   }
 };
@@ -174,7 +182,9 @@ export const generateAiVisionResponse = async (
   chatHistory: ChatHistory,
   aiUserId: string,
 ): Promise<Message | undefined> => {
-  console.log("[AI Vision Action] Generating AI response from vision...");
+  console.log(
+    `[AI Vision Action] Generating AI response from vision for ${aiUserId}...`,
+  );
 
   const genAI: GoogleGenAI = await getGoogleAIClient();
   const visionModelConfig = await getActiveVisionModel();
@@ -193,10 +203,13 @@ export const generateAiVisionResponse = async (
   const textPromptParts: string[] = [systemPrompt];
   historySlice.forEach((msg) => {
     textPromptParts.push(
-      `${msg.userId === aiUserId ? "You (AI)" : "User"}: ${msg.text}`,
+      `${isAIAgentId(msg.userId) ? "You (AI)" : "User"}: ${msg.text}`,
     );
   });
   const fullTextPrompt = textPromptParts.join("\n");
+  console.log(
+    `[AI Vision Service] Text prompt (first 200 chars): ${fullTextPrompt.substring(0, 200)}${fullTextPrompt.length > 200 ? "..." : ""}`,
+  );
 
   const contents = [
     {
@@ -241,6 +254,7 @@ export const generateAiVisionResponse = async (
     generationConfig: baseConfig,
     safetySettings,
   };
+  console.log(`[AI Vision Service] Using model: ${request.model}`);
 
   try {
     console.log("[AI Vision Service] Calling Vision AI model...");
@@ -283,7 +297,7 @@ export const generateAiVisionResponse = async (
   } catch (error) {
     console.error(
       "[AI Vision Action] Error generating AI message from vision:",
-      error,
+      error instanceof Error ? error.stack : error,
     );
     if (error instanceof Error) {
       const gError = error as GoogleAIError;

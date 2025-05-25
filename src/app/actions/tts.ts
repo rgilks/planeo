@@ -106,6 +106,14 @@ async function performSynthesis(
 export const synthesizeSpeechAction = async (
   params: SynthesizeSpeechParams,
 ): Promise<SynthesizeSpeechResult> => {
+  const ttsEnabled = process.env["NEXT_PUBLIC_TTS_ENABLED"] !== "false";
+  if (!ttsEnabled) {
+    console.log(
+      "[TTS Action] TTS is disabled via NEXT_PUBLIC_TTS_ENABLED. Skipping synthesis.",
+    );
+    return { audioBase64: "", error: "TTS is disabled." }; // Return empty audio or a specific indicator
+  }
+
   const validationResult = SynthesizeSpeechParamsSchema.safeParse(params);
 
   if (!validationResult.success) {

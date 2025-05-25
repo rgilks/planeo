@@ -48,9 +48,16 @@ export const POST = async (req: NextRequest) => {
   let payload;
   try {
     payload = await req.json();
-  } catch {
+    // Log the received payload for POST requests on a single line
+    console.log(
+      "POST /api/events - Received payload:",
+      JSON.stringify(payload),
+    );
+  } catch (e) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    console.error("POST /api/events - Invalid JSON payload:", error.message);
     return NextResponse.json(
-      { error: "Invalid JSON payload" },
+      { error: "Invalid JSON payload", details: error.message },
       { status: 400 },
     );
   }

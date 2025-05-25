@@ -62,7 +62,7 @@ export const ChatWindow = ({ myId }: ChatWindowProps) => {
     >
       <div style={{ flexGrow: 1, overflowY: "auto", marginBottom: "10px" }}>
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
+          <ChatMessage key={msg.id} message={msg} currentUserId={myId} />
         ))}
       </div>
       <div style={{ display: "flex" }}>

@@ -4,7 +4,7 @@ const pollForCondition = async (
   page: Page,
   conditionFn: () => Promise<boolean>,
   timeout = 10000,
-  pollInterval = 100
+  pollInterval = 100,
 ) => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
@@ -84,7 +84,7 @@ test.describe("Multi-User Event Synchronization", () => {
           return storeState?.remoteKeys?.[id];
         }, user1SymbolId);
         return keyData?.key === user1Key;
-      }
+      },
     );
     expect(symbolEventReceivedOnPage2).toBe(true);
   });
@@ -103,9 +103,9 @@ test.describe("Multi-User Event Synchronization", () => {
             | undefined;
         });
         return Object.values(remoteKeys || {}).some(
-          (entry) => entry.key === "h"
+          (entry) => entry.key === "h",
         );
-      }
+      },
     );
     expect(clientSideSymbolEventReceived).toBe(true);
   });
@@ -116,7 +116,7 @@ test("original: has title and receives initial event data", async ({
   request,
 }) => {
   page.on("console", (msg) =>
-    console.log(`BROWSER CONSOLE: ${msg.type()}: ${msg.text()}`)
+    console.log(`BROWSER CONSOLE: ${msg.type()}: ${msg.text()}`),
   );
 
   const postData = {
@@ -140,7 +140,7 @@ test("original: has title and receives initial event data", async ({
       });
       return JSON.stringify(eyeData?.p) === JSON.stringify([1, 2, 3]);
     },
-    10000
+    10000,
   );
   expect(received).toBe(true);
 });

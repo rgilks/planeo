@@ -94,8 +94,11 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       set((state) => {
         state.listeners.eyeUpdate.push(callback);
         if (state.cachedEyeUpdates.length > 0) {
-          const cacheToDispatch = [...state.cachedEyeUpdates];
-          state.cachedEyeUpdates = [];
+          // Deep clone events to prevent passing Immer proxies to setTimeout
+          const cacheToDispatch = state.cachedEyeUpdates.map((event) =>
+            JSON.parse(JSON.stringify(event)),
+          );
+          state.cachedEyeUpdates = []; // Clear original cache
           setTimeout(() => {
             console.log(
               `Dispatching ${cacheToDispatch.length} cached eye events to new subscriber.`,

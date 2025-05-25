@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Vector3 } from "three";
 
+import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { roundVec3, areVec3sEqual, roundArray } from "@/lib/utils";
 
 import type { EyeUpdateType } from "@/domain";
@@ -29,7 +30,7 @@ export const useEyePositionReporting = (
 
     const initialPositionRaw: [number, number, number] = [
       camera.position.x,
-      camera.position.y,
+      EYE_Y_POSITION,
       camera.position.z,
     ];
     const initialPositionRounded = roundVec3(initialPositionRaw);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { EventSchema } from "@/domain";
+import { ValidatedEyeUpdatePayloadSchema } from "@/domain/event";
 
 import { broadcast, setEye, subscribe, unsubscribe } from "./sseStore";
 
@@ -50,17 +51,33 @@ export const POST = async (req: NextRequest) => {
 
   if (!parsedEvent.success) {
     return NextResponse.json(
-      { error: "Invalid event payload", details: parsedEvent.error.flatten() },
+      {
+        error: "Invalid event structure",
+        details: parsedEvent.error.flatten(),
+      },
       { status: 400 },
     );
   }
 
-  const event = parsedEvent.data;
+  const eventData = parsedEvent.data;
 
-  if (event.type === "eyeUpdate") {
-    setEye(event.id, event.p);
-  } else if (event.type === "symbol") {
-    broadcast(event);
+  if (eventData.type === "eyeUpdate") {
+    const validatedEyeData =
+      ValidatedEyeUpdatePayloadSchema.safeParse(eventData);
+    if (!validatedEyeData.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid eyeUpdate payload",
+          details: validatedEyeData.error.flatten(),
+        },
+        { status: 400 },
+      );
+    }
+    if (validatedEyeData.data.p) {
+      setEye(validatedEyeData.data.id, validatedEyeData.data.p);
+    }
+  } else if (eventData.type === "symbol") {
+    broadcast(eventData);
   }
 
   return NextResponse.json({ ok: true });

@@ -1,17 +1,15 @@
 "use client";
 import { useMemo, useEffect } from "react";
-import { z } from "zod";
 
-import { EyeUpdateType, Vec3Schema } from "@/domain/event"; // Ensure path is correct
+import { EyeUpdateType as EventEyeUpdateType } from "@/domain/event";
+import { EyeUpdateType as DomainEyeUpdateType } from "@/domain/eye";
 import { useEventStore } from "@/stores/eventStore";
 import { useEyeStore } from "@/stores/eyeStore";
-
-type Vec3 = z.infer<typeof Vec3Schema>;
 
 const STALE_THRESHOLD_MS = 30000;
 const CLEANUP_INTERVAL_MS = 5000;
 
-export const useEyes = () => {
+export const useEyes = (): DomainEyeUpdateType[] => {
   const connectToEventSource = useEventStore((s) => s.connect);
   const subscribeToEyeUpdates = useEventStore((s) => s.subscribeEyeUpdates);
   const eventSourceConnected = useEventStore((s) => s.isConnected);
@@ -27,8 +25,8 @@ export const useEyes = () => {
   }, [connectToEventSource, eventSourceConnected]);
 
   useEffect(() => {
-    const handleEyeUpdate = (event: EyeUpdateType) => {
-      if (event.p) {
+    const handleEyeUpdate = (event: EventEyeUpdateType) => {
+      if (event.p || event.l) {
         setEyeInStore(event);
       }
     };
@@ -49,9 +47,13 @@ export const useEyes = () => {
 
   return useMemo(
     () =>
-      Object.entries(eyesFromStore).map(
-        ([id, v]) => [id, v.p] as [string, Vec3],
-      ),
+      Object.entries(eyesFromStore).map(([id, data]) => ({
+        type: "eyeUpdate" as const,
+        id,
+        p: data.p as [number, number, number] | undefined,
+        l: data.l as [number, number, number] | undefined,
+        t: data.t,
+      })),
     [eyesFromStore],
   );
 };

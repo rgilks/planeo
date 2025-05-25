@@ -8,6 +8,7 @@ import {
   INITIAL_SCALE,
   TARGET_SCALE,
   FADE_DURATION,
+  EyeUpdateType,
 } from "@/domain/eye"; // Assuming path, adjust if necessary
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 
@@ -17,7 +18,7 @@ type EyesState = {
 
 type EyesActions = {
   syncEyes: (
-    eyes: [string, [number, number, number]][],
+    eyes: EyeUpdateType[],
     myId: string,
     baseShaderMaterial: ShaderMaterial,
   ) => void;
@@ -33,24 +34,40 @@ export const useEyesStore = create<EyesState & EyesActions>()(
 
     syncEyes: (eyes, myId, baseShaderMaterial) =>
       set((state) => {
-        const incomingEyeIds = new Set(eyes.map(([id]) => id));
+        const incomingEyeIds = new Set(eyes.map((eye) => eye.id));
 
-        for (const [id, p] of eyes) {
-          if (id === myId) continue;
+        for (const eyeData of eyes) {
+          if (eyeData.id === myId) continue;
 
-          const positionVec = new Vector3(...p);
-          positionVec.y = EYE_Y_POSITION; // Set Y position here
+          const existingEye = state.managedEyes[eyeData.id];
 
-          if (state.managedEyes[id]) {
-            state.managedEyes[id].targetPosition.copy(positionVec);
-            if (state.managedEyes[id].status === "disappearing") {
-              state.managedEyes[id].status = "appearing";
+          if (existingEye) {
+            if (eyeData.p) {
+              const positionVec = new Vector3(...eyeData.p);
+              positionVec.y = EYE_Y_POSITION;
+              existingEye.targetPosition.copy(positionVec);
+            }
+            if (eyeData.l) {
+              const lookAtVec = new Vector3(...eyeData.l);
+              existingEye.targetLookAt.copy(lookAtVec);
+            }
+            if (existingEye.status === "disappearing") {
+              existingEye.status = "appearing";
             }
           } else {
-            state.managedEyes[id] = {
-              id,
+            const positionVec = eyeData.p
+              ? new Vector3(...eyeData.p)
+              : new Vector3();
+            positionVec.y = EYE_Y_POSITION;
+            const lookAtVec = eyeData.l
+              ? new Vector3(...eyeData.l)
+              : new Vector3(0, EYE_Y_POSITION, 1);
+            state.managedEyes[eyeData.id] = {
+              id: eyeData.id,
               position: positionVec.clone(),
               targetPosition: positionVec.clone(),
+              lookAt: lookAtVec.clone(),
+              targetLookAt: lookAtVec.clone(),
               opacity: 0,
               scale: INITIAL_SCALE,
               status: "appearing" as EyeStatus,
@@ -77,7 +94,12 @@ export const useEyesStore = create<EyesState & EyesActions>()(
 
           if (!eye.position.equals(eye.targetPosition)) {
             eye.position.lerp(eye.targetPosition, 0.05);
-            eye.position.y = EYE_Y_POSITION; // Ensure Y position remains fixed during LERP
+            eye.position.y = EYE_Y_POSITION;
+            changed = true;
+          }
+
+          if (!eye.lookAt.equals(eye.targetLookAt)) {
+            eye.lookAt.lerp(eye.targetLookAt, 0.05);
             changed = true;
           }
 
@@ -108,9 +130,8 @@ export const useEyesStore = create<EyesState & EyesActions>()(
           }
         }
         if (!changed) {
-          return state;
+          return;
         }
-        return;
       }),
 
     removeEye: (id: string) =>

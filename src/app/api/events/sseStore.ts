@@ -1,24 +1,18 @@
-import { z } from "zod";
-
-import { EyeUpdateType, EventType, Vec3Schema } from "@/domain";
-
-export type Vec3 = z.infer<typeof Vec3Schema>;
+import { EventEyeUpdateType, EventType, type Vec3 } from "@/domain";
 
 type Writer = { write: (data: string) => void; closed: boolean };
 
-const eyes = new Map<string, EyeUpdateType>();
+const eyes = new Map<string, EventEyeUpdateType>();
 const subs = new Set<Writer>();
 
 export const setEye = (id: string, p: Vec3): void => {
-  const msg: EyeUpdateType = { type: "eyeUpdate", id, p, t: Date.now() };
+  const msg: EventEyeUpdateType = { type: "eyeUpdate", id, p, t: Date.now() };
   eyes.set(id, msg);
   broadcast(msg);
 };
 
 export const broadcast = (msg: EventType): void => {
-  const data = `data:${JSON.stringify(msg)}
-
-`;
+  const data = `data:${JSON.stringify(msg)}\n\n`;
   for (const w of subs) {
     if (w.closed) {
       subs.delete(w);
@@ -40,9 +34,7 @@ export const subscribe = (w: Writer): void => {
   subs.add(w);
   for (const eye of eyes.values()) {
     try {
-      w.write(`data:${JSON.stringify(eye)}
-
-`);
+      w.write(`data:${JSON.stringify(eye)}\n\n`);
     } catch (error) {
       console.error(
         `Failed to write initial eye data to SSE subscriber. Removing subscriber.`,

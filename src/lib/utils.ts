@@ -136,6 +136,9 @@ export const roundVec3 = (
 ): [number, number, number] =>
   v.map((n) => Math.round(n * 100) / 100) as [number, number, number];
 
+export const roundArray = (arr: number[]): number[] =>
+  arr.map((n) => Math.round(n * 100) / 100);
+
 export const VEC3_EPSILON = 0.001;
 
 export const areVec3sEqual = (

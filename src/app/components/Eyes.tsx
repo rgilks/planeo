@@ -1,16 +1,15 @@
 "use client";
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useRef, useEffect, useMemo } from "react";
-import { Mesh, Vector3, Group, TextureLoader, ShaderMaterial } from "three";
+import { Group, TextureLoader, ShaderMaterial } from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { useEyes } from "@/hooks/useEyes";
-import { useEyesStore } from "@/stores/eyesStore";
+import { useEyesStore, ManagedEye } from "@/stores/eyesStore";
 import { useSymbolStore } from "@/stores/symbolStore";
 
 import { Eye } from "./Eye";
 
-const SUN_POS = new Vector3(0, 0, 0);
 const EYE_TEXTURE_PATH = "/eye.jpg";
 const POSITION_UPDATE_THRESHOLD = 0.00001;
 
@@ -37,8 +36,8 @@ const fragmentShader = `
 `;
 
 export const Eyes = ({ myId }: { myId: string }) => {
-  const refs = useRef<Record<string, Mesh | Group>>({});
-  const eyes = useEyes();
+  const refs = useRef<Record<string, Group>>({});
+  const eyesData = useEyes();
   const eyeTexture = useLoader(TextureLoader, EYE_TEXTURE_PATH);
   const remoteKeys = useSymbolStore((s) => s.remoteKeys);
 
@@ -61,8 +60,8 @@ export const Eyes = ({ myId }: { myId: string }) => {
   );
 
   useEffect(() => {
-    syncEyes(eyes, myId, baseShaderMaterial);
-  }, [eyes, myId, baseShaderMaterial, syncEyes]);
+    syncEyes(eyesData, myId, baseShaderMaterial);
+  }, [eyesData, myId, baseShaderMaterial, syncEyes]);
 
   useFrame((_, delta) => {
     updateEyeAnimations(delta);
@@ -75,7 +74,7 @@ export const Eyes = ({ myId }: { myId: string }) => {
     }
 
     for (const id in managedEyes) {
-      const eye = managedEyes[id];
+      const eye: ManagedEye = managedEyes[id];
       const group = refs.current[id];
 
       if (!group) continue;
@@ -86,7 +85,12 @@ export const Eyes = ({ myId }: { myId: string }) => {
       ) {
         group.position.set(eye.position.x, EYE_Y_POSITION, eye.position.z);
       }
-      group.lookAt(SUN_POS);
+
+      if (eye.lookAt && !eye.lookAt.equals(eye.position)) {
+        group.lookAt(eye.lookAt);
+      } else {
+        group.lookAt(eye.position.x, eye.position.y, eye.position.z + 1);
+      }
 
       if (eye.material.uniforms["uOpacity"].value !== eye.opacity) {
         eye.material.uniforms["uOpacity"].value = eye.opacity;
@@ -99,7 +103,7 @@ export const Eyes = ({ myId }: { myId: string }) => {
 
   return (
     <>
-      {Object.values(managedEyes).map((eye) => (
+      {Object.values(managedEyes).map((eye: ManagedEye) => (
         <Eye
           key={eye.id}
           eye={eye}

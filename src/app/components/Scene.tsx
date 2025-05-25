@@ -1,8 +1,9 @@
-import { OrbitControls, Grid } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
+import { PointerLockControls, Grid, Html } from "@react-three/drei";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { nanoid } from "nanoid";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import { Vector3 } from "three";
 
 import {
   useEventSource,
@@ -11,12 +12,94 @@ import {
 } from "@/hooks";
 import { Eyes } from "@components/Eyes";
 
+// Basic keyboard state
+const useKeyboardControls = () => {
+  const keys = useRef<{ [key: string]: boolean }>({});
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) =>
+      (keys.current[event.key.toLowerCase()] = true);
+    const onKeyUp = (event: KeyboardEvent) =>
+      (keys.current[event.key.toLowerCase()] = false);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
+  return keys;
+};
+
 const CanvasContent = ({ myId }: { myId: string }) => {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   useEyePositionReporting(myId, camera);
+  const keyboard = useKeyboardControls();
+  const [isPointerLocked, setIsPointerLocked] = useState(false);
+  const [showLockInstruction, setShowLockInstruction] = useState(true);
+
+  // Camera movement parameters
+  const moveSpeed = 0.5;
+  const zoomSpeed = 0.5; // Used for W/S movement speed
+
+  useFrame(() => {
+    if (!isPointerLocked) return;
+
+    const direction = new Vector3();
+    camera.getWorldDirection(direction);
+
+    let didMove = false;
+
+    if (keyboard.current["w"]) {
+      camera.position.addScaledVector(direction, zoomSpeed);
+      didMove = true;
+    }
+    if (keyboard.current["s"]) {
+      camera.position.addScaledVector(direction, -zoomSpeed);
+      didMove = true;
+    }
+
+    // Basic strafing (optional, can be expanded)
+    const right = new Vector3();
+    right.crossVectors(camera.up, direction).normalize();
+
+    if (keyboard.current["a"]) {
+      camera.position.addScaledVector(right, -moveSpeed);
+      didMove = true;
+    }
+    if (keyboard.current["d"]) {
+      camera.position.addScaledVector(right, moveSpeed);
+      didMove = true;
+    }
+
+    // Keep camera above a certain y position (e.g., ground level + eye height)
+    if (camera.position.y < 2) {
+      // Adjust this minimum height as needed
+      camera.position.y = 2;
+      didMove = true;
+    }
+
+    if (didMove) {
+      camera.updateProjectionMatrix(); // Important if camera properties change that affect projection
+    }
+  });
 
   return (
     <>
+      {showLockInstruction && !isPointerLocked && (
+        <Html center style={{ pointerEvents: "none" }}>
+          <div
+            style={{
+              color: "white",
+              fontSize: "20px",
+              backgroundColor: "rgba(0,0,0,0.7)",
+              padding: "10px 20px",
+              borderRadius: "5px",
+            }}
+          >
+            Click to look around
+          </div>
+        </Html>
+      )}
       <EffectComposer>
         <Bloom
           luminanceThreshold={0.05}
@@ -44,16 +127,17 @@ const CanvasContent = ({ myId }: { myId: string }) => {
           target-position={[0, 0, 0]}
         />
       </group>
-      <OrbitControls
-        enablePan={false}
-        enableDamping
-        dampingFactor={0.05}
-        rotateSpeed={0.4}
-        zoomSpeed={0.4}
-        minDistance={40}
-        maxDistance={400}
-        onStart={() => {}}
-        onEnd={() => {}}
+      <PointerLockControls
+        camera={camera}
+        domElement={gl.domElement}
+        onLock={() => {
+          setIsPointerLocked(true);
+          setShowLockInstruction(false);
+        }}
+        onUnlock={() => {
+          setIsPointerLocked(false);
+          setShowLockInstruction(true);
+        }}
       />
       <Grid
         position={[0, -20 + 0.01, 0]}
@@ -81,7 +165,7 @@ const Scene = () => {
 
   return (
     <Canvas
-      camera={{ position: [0, 20, 120], near: 1, far: 2500 }}
+      camera={{ position: [0, 20, 120], near: 1, far: 2500, fov: 75 }}
       style={{ width: "100%", height: "100%" }}
       shadows
     >

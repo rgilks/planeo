@@ -7,7 +7,7 @@ import { EyeUpdateType, Vec3Schema } from "@/domain/event";
 type Vec3 = z.infer<typeof Vec3Schema>;
 
 interface eyeStoreState {
-  eyes: Record<string, { p: Vec3; t: number }>;
+  eyes: Record<string, { p?: Vec3; l?: Vec3; t: number }>;
 }
 
 interface EyeStoreActions {
@@ -27,7 +27,18 @@ export const useEyeStore = create<eyeStoreState & EyeStoreActions>()(
     eyes: {},
     setEye: (eyeUpdate) =>
       set((state) => {
-        state.eyes[eyeUpdate.id] = { p: eyeUpdate.p, t: eyeUpdate.t };
+        if (eyeUpdate.p || eyeUpdate.l) {
+          const newEyeData: { p?: Vec3; l?: Vec3; t: number } = {
+            t: eyeUpdate.t,
+          };
+          if (eyeUpdate.p) {
+            newEyeData.p = eyeUpdate.p;
+          }
+          if (eyeUpdate.l) {
+            newEyeData.l = eyeUpdate.l;
+          }
+          state.eyes[eyeUpdate.id] = newEyeData;
+        }
       }),
     removeStaleEyes: (thresholdMs) =>
       set((state) => {

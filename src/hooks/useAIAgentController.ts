@@ -13,11 +13,13 @@ import { requestAiDecision } from "@/app/actions/aiControllerActions";
 import { getAIAgents } from "@/domain/aiAgent";
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { roundArray } from "@/lib/utils";
+import { useAIVisionStore } from "@/stores/aiVisionStore";
 import { useEyesStore } from "@/stores/eyesStore";
 import { useMessageStore } from "@/stores/messageStore";
 
 import type { EyeUpdateType, Vec3 as DomainVec3 } from "@/domain";
 import type { AIAction } from "@/domain/aiAction";
+
 
 const RENDER_INTERVAL_MS = 7000; // How often each AI thinks
 const CAPTURE_WIDTH = 320;
@@ -28,6 +30,7 @@ export const useAIAgentController = (myId: string) => {
   const agents = getAIAgents();
   const getMessages = useMessageStore((s) => s.messages);
   const managedEyes = useEyesStore((s) => s.managedEyes);
+  const setAIAgentView = useAIVisionStore((s) => s.setAIAgentView);
 
   // Store for AI cameras and render targets
   const aiCameraRefs = useRef<Record<string, PerspectiveCamera>>({});
@@ -139,6 +142,9 @@ export const useAIAgentController = (myId: string) => {
           context.putImageData(imgData, 0, 0);
         }
         const imageDataUrl = captureCanvas.toDataURL("image/png");
+
+        // Store the image data URL in the Zustand store
+        setAIAgentView(agentId, imageDataUrl);
 
         // Restore original renderer state
         gl.setRenderTarget(originalRenderTarget);
@@ -266,7 +272,7 @@ export const useAIAgentController = (myId: string) => {
         processingLock.current.delete(agentId);
       }
     },
-    [gl, mainScene, managedEyes, getMessages],
+    [gl, mainScene, managedEyes, getMessages, setAIAgentView],
   );
 
   useFrame(() => {

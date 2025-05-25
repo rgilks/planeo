@@ -17,6 +17,10 @@
 - **Text-to-Speech (TTS):** Chat messages from other users are spoken aloud with a distinct voice for each user. ([Details](/docs/text-to-speech.md))
 - **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
 
+## Simulation Start
+
+**Important:** To ensure audio playback (like AI agent speech) functions correctly due to browser policies, you must now click on the screen to start the simulation. An overlay will prompt this action upon loading.
+
 ## Planned Features
 
 The following features are planned for future development:

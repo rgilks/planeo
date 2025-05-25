@@ -11,12 +11,14 @@ import { useAIAgentController } from "@/hooks/useAIAgentController";
 import { downscaleImage } from "@/lib/utils";
 import { useInputControlStore } from "@/stores/inputControlStore";
 import { useMessageStore } from "@/stores/messageStore";
+import { useSimulationStore } from "@/stores/simulationStore";
 import { Eyes } from "@components/Eyes";
 import { FallingCubes } from "@components/FallingCubes";
+import { StartOverlay } from "@components/StartOverlay";
 
 const DOWNSCALED_WIDTH = 320;
 const DOWNSCALED_HEIGHT = 200;
-const CAPTURE_INTERVAL_MS = 5000; // 5 seconds
+const CAPTURE_INTERVAL_MS = 5000;
 
 // Basic keyboard state
 const useKeyboardControls = () => {
@@ -177,25 +179,33 @@ const CanvasContent = ({ myId }: { myId: string }) => {
 
 const Scene = ({ myId }: { myId: string }) => {
   const myIdRef = useRef(myId);
+  const isStarted = useSimulationStore((state) => state.isStarted);
+
   useEffect(() => {
     myIdRef.current = myId;
   }, [myId]);
 
   useEventSource(myIdRef);
 
+  if (!isStarted) {
+    return <StartOverlay />;
+  }
+
   return (
-    <Canvas
-      gl={{ preserveDrawingBuffer: true }}
-      camera={{ position: [48, 20, 120], near: 1, far: 2500, fov: 75 }}
-      style={{ width: "100%", height: "100%" }}
-      shadows
-    >
-      <color attach="background" args={["#000"]} />
-      <Physics>
-        <CanvasContent myId={myId} />
-        <FallingCubes />
-      </Physics>
-    </Canvas>
+    <>
+      <Canvas
+        gl={{ preserveDrawingBuffer: true }}
+        camera={{ position: [48, 20, 120], near: 1, far: 2500, fov: 75 }}
+        style={{ width: "100%", height: "100%" }}
+        shadows
+      >
+        <color attach="background" args={["#000"]} />
+        <Physics>
+          <CanvasContent myId={myId} />
+          <FallingCubes />
+        </Physics>
+      </Canvas>
+    </>
   );
 };
 

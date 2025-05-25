@@ -26,6 +26,8 @@
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/rapier": "^2.1.0",
     "better-sqlite3": "^11.10.0",
+    "@google-cloud/text-to-speech": "^6.1.0",
+    "@google/genai": "^1.0.1",
     "immer": "^10.1.1",
     "next": "15.3.2",
     "next-auth": "^4.24.11",

@@ -36,6 +36,16 @@ export const useEyePositionReporting = (
 
     const lookAtDirection = new Vector3();
     camera.getWorldDirection(lookAtDirection);
+
+    // If looking perfectly vertical, add a tiny horizontal offset for the initial payload
+    if (
+      Math.abs(lookAtDirection.x) < 0.001 &&
+      Math.abs(lookAtDirection.z) < 0.001
+    ) {
+      lookAtDirection.x = 0.01; // Small non-zero component
+      lookAtDirection.normalize(); // Keep it a unit vector
+    }
+
     const initialLookAtRaw: [number, number, number] = [
       camera.position.x + lookAtDirection.x,
       camera.position.y + lookAtDirection.y,
@@ -69,6 +79,16 @@ export const useEyePositionReporting = (
 
       const currentLookAtDirection = new Vector3();
       camera.getWorldDirection(currentLookAtDirection);
+
+      // If looking perfectly vertical, add a tiny horizontal offset to ensure the lookAt point isn't co-linear (on XZ) with position
+      if (
+        Math.abs(currentLookAtDirection.x) < 0.001 &&
+        Math.abs(currentLookAtDirection.z) < 0.001
+      ) {
+        currentLookAtDirection.x = 0.01; // Small non-zero component
+        currentLookAtDirection.normalize(); // Keep it a unit vector for consistency if preferred
+      }
+
       const currentLookAtRaw: [number, number, number] = [
         camera.position.x + currentLookAtDirection.x,
         camera.position.y + currentLookAtDirection.y,

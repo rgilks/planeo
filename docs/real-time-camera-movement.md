@@ -1,10 +1,10 @@
-# Real-time Camera Movement with Arrow Keys
+# Real-time Camera Movement and Orientation
 
-**Date:** 2025-05-25
+**Date:** 2025-05-25 (Updated 2025-05-25 for new controls)
 
 ## Overview
 
-This document outlines the implementation of real-time camera movement using arrow keys, allowing users to navigate their viewpoint within the 3D scene. Changes in camera position are broadcast to other connected users, enabling a shared an interactive experience.
+This document outlines the implementation of real-time camera movement and orientation using keyboard controls. Changes in camera position and orientation (yaw) are broadcast to other connected users, enabling a shared interactive experience. Mouse look is currently disabled.
 
 ## Implementation Details
 
@@ -13,18 +13,22 @@ This document outlines the implementation of real-time camera movement using arr
 - **Component:** `src/app/components/Scene.tsx`
 - **Hook:** `useKeyboardControls` (existing)
 - The `useKeyboardControls` hook tracks the state of pressed keys.
-- The `useFrame` hook within the `CanvasContent` component was modified to listen for `ArrowUp`, `ArrowDown`, `ArrowLeft`, and `ArrowRight` key presses.
+- The `useFrame` hook within the `CanvasContent` component handles camera updates based on key presses.
 
-### 2. Camera Movement Logic
+### 2. Camera Control Logic
 
 - **Component:** `src/app/components/Scene.tsx` (`CanvasContent`)
-- When an arrow key is pressed:
-  - `ArrowUp`/`W`: The camera moves forward along its current look direction.
-  - `ArrowDown`/`S`: The camera moves backward along its current look direction.
-  - `ArrowLeft`/`A`: The camera strafes left, perpendicular to its current look direction.
-  - `ArrowRight`/`D`: The camera strafes right, perpendicular to its current look direction.
-- Movement speed for forward/backward is controlled by `zoomSpeed`, and for strafing by `moveSpeed`.
+- **Look (Yaw Rotation):**
+  - `A` / `ArrowLeft`: Rotates the camera view to the left (increases `camera.rotation.y`).
+  - `D` / `ArrowRight`: Rotates the camera view to the right (decreases `camera.rotation.y`).
+  - Rotation speed is controlled by `rotationSpeed`.
+  - The camera does not pitch (look up/down); it remains level with the horizon.
+- **Movement:**
+  - `W` / `ArrowUp`: Moves the camera forward along its current facing direction.
+  - `S` / `ArrowDown`: Moves the camera backward from its current facing direction.
+  - Movement speed is controlled by `zoomSpeed`.
 - The camera's Y-position is constrained to a minimum value (e.g., `2`) to prevent it from passing through the visual ground plane.
+- Mouse look (`PointerLockControls`) has been disabled.
 
 ### 3. Position Broadcasting
 

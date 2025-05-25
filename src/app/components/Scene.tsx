@@ -1,10 +1,11 @@
-import { PointerLockControls, Grid, Html } from "@react-three/drei";
+import { Grid } from "@react-three/drei";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { nanoid } from "nanoid";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Vector3 } from "three";
 
+import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import {
   useEventSource,
   useInputThrottle,
@@ -31,25 +32,39 @@ const useKeyboardControls = () => {
 };
 
 const CanvasContent = ({ myId }: { myId: string }) => {
-  const { camera, gl } = useThree();
+  const { camera } = useThree();
   useEyePositionReporting(myId, camera);
   const keyboard = useKeyboardControls();
-  const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const [showLockInstruction, setShowLockInstruction] = useState(true);
 
-  // Camera movement parameters
-  const moveSpeed = 0.5;
-  const zoomSpeed = 0.5; // Used for W/S movement speed
+  const zoomSpeed = 0.5;
+  const rotationSpeed = 0.03;
+
+  useEffect(() => {
+    camera.position.y = EYE_Y_POSITION;
+    camera.rotation.set(0, camera.rotation.y, 0, "YXZ");
+  }, [camera]);
 
   useFrame(() => {
-    if (!isPointerLocked) return;
-
     const direction = new Vector3();
     camera.getWorldDirection(direction);
 
     let didMove = false;
+    let didRotate = false;
 
-    // Forward/backward movement (W/S/ArrowUp/ArrowDown)
+    if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
+      camera.rotation.y += rotationSpeed;
+      didRotate = true;
+    }
+    if (keyboard.current["d"] || keyboard.current["arrowright"]) {
+      camera.rotation.y -= rotationSpeed;
+      didRotate = true;
+    }
+
+    if (didRotate) {
+      camera.rotation.x = 0;
+      camera.rotation.z = 0;
+    }
+
     if (keyboard.current["w"] || keyboard.current["arrowup"]) {
       camera.position.addScaledVector(direction, zoomSpeed);
       didMove = true;
@@ -59,48 +74,16 @@ const CanvasContent = ({ myId }: { myId: string }) => {
       didMove = true;
     }
 
-    // Strafing movement (A/D/ArrowLeft/ArrowRight)
-    const right = new Vector3();
-    right.crossVectors(direction, camera.up).normalize(); // Calculate right vector (direction X up)
-
-    if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
-      camera.position.addScaledVector(right, -moveSpeed);
-      didMove = true;
-    }
-    if (keyboard.current["d"] || keyboard.current["arrowright"]) {
-      camera.position.addScaledVector(right, moveSpeed);
-      didMove = true;
+    if (camera.position.y !== EYE_Y_POSITION) {
+      camera.position.y = EYE_Y_POSITION;
     }
 
-    // Keep camera above a certain y position (e.g., ground level + eye height)
-    if (camera.position.y < 2) {
-      // Adjust this minimum height as needed
-      camera.position.y = 2;
-      didMove = true;
-    }
-
-    if (didMove) {
-      camera.updateProjectionMatrix(); // Important if camera properties change that affect projection
+    if (didMove || didRotate) {
     }
   });
 
   return (
     <>
-      {showLockInstruction && !isPointerLocked && (
-        <Html center style={{ pointerEvents: "none" }}>
-          <div
-            style={{
-              color: "white",
-              fontSize: "20px",
-              backgroundColor: "rgba(0,0,0,0.7)",
-              padding: "10px 20px",
-              borderRadius: "5px",
-            }}
-          >
-            Click to look around
-          </div>
-        </Html>
-      )}
       <EffectComposer>
         <Bloom
           luminanceThreshold={0.05}
@@ -128,18 +111,6 @@ const CanvasContent = ({ myId }: { myId: string }) => {
           target-position={[0, 0, 0]}
         />
       </group>
-      <PointerLockControls
-        camera={camera}
-        domElement={gl.domElement}
-        onLock={() => {
-          setIsPointerLocked(true);
-          setShowLockInstruction(false);
-        }}
-        onUnlock={() => {
-          setIsPointerLocked(false);
-          setShowLockInstruction(true);
-        }}
-      />
       <Grid
         position={[0, -20 + 0.01, 0]}
         args={[1000, 1000]}

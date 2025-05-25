@@ -22,6 +22,7 @@ interface EventStoreState {
     symbol: SymbolEventListener[];
     eyeUpdate: EyeUpdateEventListener[];
   };
+  cachedEyeUpdates: EyeUpdateType[];
 }
 
 interface EventStoreActions {
@@ -42,6 +43,7 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       symbol: [],
       eyeUpdate: [],
     },
+    cachedEyeUpdates: [],
 
     connect: () => {
       if (get().eventSourceInstance || get().isConnected) {
@@ -88,9 +90,26 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     },
 
     subscribeEyeUpdates: (callback: EyeUpdateEventListener) => {
+      let dispatchedCache = false;
       set((state) => {
         state.listeners.eyeUpdate.push(callback);
+        if (state.cachedEyeUpdates.length > 0) {
+          const cacheToDispatch = [...state.cachedEyeUpdates];
+          state.cachedEyeUpdates = [];
+          setTimeout(() => {
+            console.log(
+              `Dispatching ${cacheToDispatch.length} cached eye events to new subscriber.`,
+            );
+            cacheToDispatch.forEach((cachedEvent) => callback(cachedEvent));
+          }, 0);
+          dispatchedCache = true;
+        }
       });
+
+      if (dispatchedCache) {
+        // console.log("Scheduled dispatch of cached eye events for new subscriber.");
+      }
+
       return () => {
         set((state) => {
           state.listeners.eyeUpdate = state.listeners.eyeUpdate.filter(
@@ -112,9 +131,16 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
               callback(data as SymbolEventType),
             );
           } else if (data.type === "eyeUpdate") {
-            [...get().listeners.eyeUpdate].forEach((callback) =>
-              callback(data as EyeUpdateType),
-            );
+            if (get().listeners.eyeUpdate.length === 0) {
+              console.log("Caching eyeUpdate event, no listeners yet:", data);
+              set((state) => {
+                state.cachedEyeUpdates.push(data as EyeUpdateType);
+              });
+            } else {
+              [...get().listeners.eyeUpdate].forEach((callback) =>
+                callback(data as EyeUpdateType),
+              );
+            }
           }
         } else {
           console.error(

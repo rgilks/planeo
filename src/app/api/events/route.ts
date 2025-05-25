@@ -73,8 +73,12 @@ export const POST = async (req: NextRequest) => {
         { status: 400 },
       );
     }
-    if (validatedEyeData.data.p) {
-      setEye(validatedEyeData.data.id, validatedEyeData.data.p);
+    if (validatedEyeData.data.p || validatedEyeData.data.l) {
+      setEye(
+        validatedEyeData.data.id,
+        validatedEyeData.data.p,
+        validatedEyeData.data.l,
+      );
     }
   } else if (eventData.type === "symbol") {
     broadcast(eventData);

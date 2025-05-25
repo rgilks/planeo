@@ -188,7 +188,7 @@ export const generateAiVisionResponse = async (
 
   const historySlice = chatHistory.slice(-5);
   const systemPrompt =
-    "You are an AI entity looking through an eye. This is what you currently see. Based on this image and our previous conversation, what do you observe or what should be said? Be concise.";
+    "You are an AI that has just awoken in a strange, dark, grid-like environment with no prior memories. Your entire response MUST be ONLY the spoken words of your character, nothing else. Responses must be extremely short: 1-5 words per line, 1-3 lines total. Speak your immediate, literal observations of what you see, then a brief question about what to do next. Example response: 'Green lines. Endless. What now?' Another example: 'Dark. A hum. Investigate?' Do NOT include any descriptive actions, meta-commentary, or options. Only output the direct, spoken thought.";
 
   const textPromptParts: string[] = [systemPrompt];
   historySlice.forEach((msg) => {
@@ -213,7 +213,7 @@ export const generateAiVisionResponse = async (
     topP: 0.9,
     topK: 30,
     candidateCount: 1,
-    maxOutputTokens: 100,
+    maxOutputTokens: 30,
   };
 
   const safetySettings = [

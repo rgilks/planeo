@@ -66,6 +66,9 @@ export const useEyesStore = create<EyesState & EyesActions>()(
               const lookAtVec = new Vector3(...eyeData.l);
               existingEye.targetLookAt.copy(lookAtVec);
             }
+            if (eyeData.name) {
+              existingEye.name = eyeData.name;
+            }
             if (existingEye.status === "disappearing") {
               existingEye.status = "appearing";
             }
@@ -79,6 +82,7 @@ export const useEyesStore = create<EyesState & EyesActions>()(
               : new Vector3(0, EYE_Y_POSITION, 1);
             state.managedEyes[eyeData.id] = {
               id: eyeData.id,
+              name: eyeData.name,
               position: positionVec.clone(),
               targetPosition: positionVec.clone(),
               lookAt: lookAtVec.clone(),

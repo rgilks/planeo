@@ -202,6 +202,17 @@ export const useAIAgentController = (myId: string) => {
               newLookAt.addVectors(currentPosition, directionToLookAt);
               // Position doesn't change on turn
               newPosition = currentPosition;
+            } else if (movementAction.type === "lookAt") {
+              const targetEye = managedEyes[movementAction.targetId];
+              if (targetEye) {
+                newLookAt.copy(targetEye.position);
+              } else {
+                console.warn(
+                  `[AI Controller] Target eye ${movementAction.targetId} not found for lookAt action.`,
+                );
+              }
+              // Position doesn't change on lookAt
+              newPosition = currentPosition;
             }
 
             // Send eye update

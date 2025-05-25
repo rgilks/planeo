@@ -2,6 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 
+import { getAIAgentById } from "@/domain/aiAgent";
 import { Message } from "@/domain/message";
 
 import { generateAiActionAndChat, type ChatHistory } from "./generateMessage";
@@ -29,11 +30,14 @@ export const requestAiDecision = async (
   );
 
   if (decision) {
-    if (decision.chat && decision.chat.trim() !== "") {
+    if (decision.chatMessage && decision.chatMessage.trim() !== "") {
+      const agent = getAIAgentById(aiAgentId);
+      const agentDisplayName = agent?.displayName || aiAgentId;
       const aiMessage: Message = {
         id: uuidv4(),
         userId: aiAgentId,
-        text: decision.chat.trim(),
+        name: agentDisplayName,
+        text: decision.chatMessage.trim(),
         timestamp: Date.now(),
       };
 

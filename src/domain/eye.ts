@@ -6,6 +6,7 @@ export type EyeStatus = z.infer<typeof EyeStatusSchema>;
 
 export const EyeStateSchema = z.object({
   id: z.string(),
+  name: z.string().optional(),
   position: z.instanceof(Vector3),
   targetPosition: z.instanceof(Vector3),
   lookAt: z.instanceof(Vector3),
@@ -20,6 +21,7 @@ export type EyeState = z.infer<typeof EyeStateSchema>;
 export const EyeUpdatePayloadSchema = z.object({
   type: z.literal("eyeUpdate"),
   id: z.string(),
+  name: z.string().optional(),
   p: z.array(z.number()).length(3).optional(), // Position [x, y, z]
   l: z.array(z.number()).length(3).optional(), // LookAt [x, y, z]
   t: z.number(),

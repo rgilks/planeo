@@ -13,6 +13,11 @@ const TurnActionSchema = z.object({
   degrees: z.number().positive(),
 });
 
+const LookAtActionSchema = z.object({
+  type: z.literal("lookAt"),
+  targetId: z.string(),
+});
+
 const NoActionSchema = z.object({
   type: z.literal("none"),
 });
@@ -20,6 +25,7 @@ const NoActionSchema = z.object({
 export const AIActionSchema = z.union([
   MoveActionSchema,
   TurnActionSchema,
+  LookAtActionSchema,
   NoActionSchema,
   z.null(), // Allow null for no action
 ]);
@@ -28,7 +34,7 @@ export type AIAction = z.infer<typeof AIActionSchema>;
 
 // Define the expected JSON structure from the LLM
 export const AIResponseSchema = z.object({
-  chat: z.string().optional(), // Chat can be optional
+  chatMessage: z.string().optional(),
   action: AIActionSchema,
 });
 

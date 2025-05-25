@@ -12,8 +12,8 @@ export type AIAgent = z.infer<typeof AIAgentSchema>;
 let parsedAIAgents: AIAgent[] | null = null;
 
 const defaultAIAgents: AIAgent[] = [
-  { id: "ai-agent-1", displayName: "AI-1" },
-  { id: "ai-agent-2", displayName: "AI-2" },
+  { id: "ai-agent-1", displayName: "Orion" },
+  { id: "ai-agent-2", displayName: "Nova" },
 ];
 
 export const getAIAgents = (): AIAgent[] => {

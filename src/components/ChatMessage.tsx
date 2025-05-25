@@ -19,6 +19,7 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
   const ttsEnabled = process.env["NEXT_PUBLIC_TTS_ENABLED"] !== "false"; // Defaults to true if not set or not 'false'
 
   const getSenderDisplayName = () => {
+    if (message.name) return message.name; // Use message.name if available
     if (isAIAgentId(message.userId)) {
       const agent = getAIAgentById(message.userId);
       return agent?.displayName || message.userId; // Fallback to userId if agent not found

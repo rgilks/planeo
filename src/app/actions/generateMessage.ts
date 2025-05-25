@@ -135,18 +135,22 @@ export const generateAiChatMessage = async (
   aiUserId: string,
 ): Promise<Message | undefined> => {
   console.log(`[AI Action] Generating AI Chat Message for ${aiUserId}...`);
+  const agent = getAIAgentById(aiUserId); // Get agent details
+  const agentName = agent?.displayName || aiUserId; // Use displayName or fallback to ID
 
   const historySlice = chatHistory.slice(-5);
   const prompt =
     historySlice
       .map((msg) => {
-        if (isAIAgentId(msg.userId)) {
-          const agent = getAIAgentById(msg.userId);
-          return `${msg.userId === aiUserId ? "You (AI)" : agent?.displayName || "AI"}: ${msg.text}`;
-        }
-        return `User: ${msg.text}`;
+        // Use msg.name if available, otherwise use logic to determine sender
+        const senderName =
+          msg.name ||
+          (isAIAgentId(msg.userId)
+            ? getAIAgentById(msg.userId)?.displayName || "AI"
+            : "User");
+        return `${senderName}: ${msg.text}`;
       })
-      .join("\n") + `\n${getAIAgentById(aiUserId)?.displayName || "AI"}:`;
+      .join("\\n") + `\\n${agentName}:`; // Use agentName for the current AI
 
   try {
     const aiResponseText = await callAIForStory(prompt);
@@ -155,6 +159,7 @@ export const generateAiChatMessage = async (
       const aiMessage: Message = {
         id: uuidv4(),
         userId: aiUserId,
+        name: agentName, // Add agentName to the message
         text: aiResponseText.trim(),
         timestamp: Date.now(),
       };
@@ -238,63 +243,50 @@ export const generateAiActionAndChat = async (
 You have no memory of how you got here or who you are.
 You feel a little disoriented and cautious, perhaps a bit afraid.
 
+You are not alone. There may be other beings in this scene. Try to communicate with them.
+You can see them as floating eyes. You can also try to look at them.
+
 Communicate your thoughts, observations (based on what you see), and feelings in brief chat messages as you try to understand your surroundings.
 What are you thinking? What are you feeling based on your current view?
 
-You can also move. Possible actions are:
+You can also move and look. Possible actions are:
 - Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares }
 - Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees }
+- LookAt: { "type": "lookAt", "targetId": "ID_of_the_other_eye_to_look_at" } // New action
 - No action: { "type": "none" } or null
 
 Based on what you see, think, and feel, decide on your next chat message AND your next action.
 Your entire response MUST be a single JSON object matching this structure:
+\`\`\`json
 {
-  "chat": "Your brief thought, observation, or feeling here",
+  "chatMessage": "Your short chat message here. Example: 'Where am I?' or 'Is anyone there?'",
   "action": { "type": "move", "direction": "forward", "distance": 1 }
 }
-Example if turning:
-{
-  "chat": "What's over there? I'll turn left to see.",
-  "action": { "type": "turn", "direction": "left", "degrees": 45 }
-}
-Example if no action (you should still chat):
-{
-  "chat": "I'm not sure what to do. I'll wait and see.",
-  "action": { "type": "none" }
-}
+\`\`\`
+If you want to look at another eye, the action would be: { "type": "lookAt", "targetId": "someEyeId" }
+If you don't want to perform an action, use: { "type": "none" } or null for the action.
 
-Always provide a chat message. Keep your messages and actions short and simple. Try to explore and make sense of this place.
-The grid squares are roughly your body size. Distances are in grid squares (usually 1). Degrees for turning (e.g., 30, 45, 90).
-Current chat history (last 10 messages):`;
+Previous chat history (last 10 messages):
+${historySlice
+  .map((msg) => {
+    const senderName =
+      msg.name ||
+      (isAIAgentId(msg.userId)
+        ? getAIAgentById(msg.userId)?.displayName || "AI"
+        : "User");
+    return `${senderName}: ${msg.text}`;
+  })
+  .join("\\n")}
 
-  const textPromptParts: string[] = [systemPrompt];
-  historySlice.forEach((msg) => {
-    if (isAIAgentId(msg.userId)) {
-      const otherAgent = getAIAgentById(msg.userId);
-      textPromptParts.push(
-        `${msg.userId === aiAgentId ? "You (" + agentDisplayName + ")" : otherAgent?.displayName || "Other AI"}: ${msg.text}`,
-      );
-    } else {
-      textPromptParts.push(`User: ${msg.text}`);
-    }
-  });
-  const fullTextPrompt =
-    textPromptParts.join("\n") +
-    "\nWhat is your JSON response (chat and action)?";
-
-  console.log(
-    `[AI Action & Chat Service] Text prompt for ${agentDisplayName} (first 300 chars): ${fullTextPrompt.substring(
-      0,
-      300,
-    )}${fullTextPrompt.length > 300 ? "..." : ""}`,
-  );
+Current view is provided as an image.
+Your response:`;
 
   const contents = [
     {
       role: "user",
       parts: [
         { inlineData: { mimeType: "image/png", data: base64ImageData } },
-        { text: fullTextPrompt },
+        { text: systemPrompt },
       ],
     },
   ];
@@ -376,6 +368,39 @@ Current chat history (last 10 messages):`;
             `[AI Action & Chat Service] Successfully parsed and validated AI response for ${agentDisplayName}:`,
             validatedResponse.data,
           );
+
+          // If there's a chat message, send it to the event stream
+          if (validatedResponse.data.chatMessage) {
+            const aiChatMessage: Message = {
+              id: uuidv4(),
+              userId: aiAgentId,
+              name: agentDisplayName, // Use the agent's display name
+              text: validatedResponse.data.chatMessage,
+              timestamp: Date.now(),
+            };
+
+            const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
+            if (!appUrl) {
+              console.error(
+                "[AI Action & Chat Service] ERROR: NEXT_PUBLIC_APP_URL is not defined. Cannot post AI message to event stream.",
+              );
+            } else {
+              fetch(`${appUrl}/api/events`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  ...aiChatMessage,
+                  type: "chatMessage" as const,
+                }),
+              }).catch((fetchError) => {
+                console.error(
+                  "[AI Action & Chat Service] Fetch to /api/events for chat message failed:",
+                  fetchError,
+                );
+              });
+            }
+          }
+
           return validatedResponse.data;
         } else {
           console.error(
@@ -383,7 +408,33 @@ Current chat history (last 10 messages):`;
             validatedResponse.error.flatten(),
           );
           // Attempt to provide a default "no action" if parsing fails badly
-          return { chat: "I'm a bit confused.", action: { type: "none" } };
+          // Also send a fallback chat message if validation fails but we have a chat string
+          let fallbackChatMessage = "I'm a bit confused.";
+          if (
+            typeof parsedJson?.chatMessage === "string" &&
+            parsedJson.chatMessage.trim() !== ""
+          ) {
+            fallbackChatMessage = parsedJson.chatMessage.trim();
+          }
+          const fallbackMessage: Message = {
+            id: uuidv4(),
+            userId: aiAgentId,
+            name: agentDisplayName,
+            text: fallbackChatMessage,
+            timestamp: Date.now(),
+          };
+          const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
+          if (appUrl) {
+            fetch(`${appUrl}/api/events`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ...fallbackMessage,
+                type: "chatMessage" as const,
+              }),
+            }).catch(console.error);
+          }
+          return { chatMessage: fallbackChatMessage, action: { type: "none" } };
         }
       } catch (jsonParseError) {
         console.error(
@@ -394,8 +445,26 @@ Current chat history (last 10 messages):`;
           "Attempted to parse:", // This is what was actually passed to JSON.parse
           jsonToParse,
         );
+        const errorMessage: Message = {
+          id: uuidv4(),
+          userId: aiAgentId,
+          name: agentDisplayName,
+          text: "I had trouble thinking in JSON.",
+          timestamp: Date.now(),
+        };
+        const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
+        if (appUrl) {
+          fetch(`${appUrl}/api/events`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...errorMessage,
+              type: "chatMessage" as const,
+            }),
+          }).catch(console.error);
+        }
         return {
-          chat: "I had trouble thinking in JSON.",
+          chatMessage: "I had trouble thinking in JSON.",
           action: { type: "none" },
         };
       }
@@ -403,7 +472,25 @@ Current chat history (last 10 messages):`;
     console.log(
       `[AI Action & Chat Service] AI (${agentDisplayName}) did not return a response text.`,
     );
-    return { chat: "I'm speechless.", action: { type: "none" } };
+    const speechlessMessage: Message = {
+      id: uuidv4(),
+      userId: aiAgentId,
+      name: agentDisplayName,
+      text: "I'm speechless.",
+      timestamp: Date.now(),
+    };
+    const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
+    if (appUrl) {
+      fetch(`${appUrl}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...speechlessMessage,
+          type: "chatMessage" as const,
+        }),
+      }).catch(console.error);
+    }
+    return { chatMessage: "I'm speechless.", action: { type: "none" } };
   } catch (error) {
     console.error(
       `[AI Action & Chat Service] Error generating AI action/chat for ${agentDisplayName}:`,
@@ -427,6 +514,24 @@ Current chat history (last 10 messages):`;
     } else {
       console.error("Caught an unknown error type:", error);
     }
-    return { chat: "I encountered an error.", action: { type: "none" } };
+    const errorMessage: Message = {
+      id: uuidv4(),
+      userId: aiAgentId,
+      name: agentDisplayName,
+      text: "I encountered an error while thinking.",
+      timestamp: Date.now(),
+    };
+    const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
+    if (appUrl) {
+      fetch(`${appUrl}/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...errorMessage, type: "chatMessage" as const }),
+      }).catch(console.error);
+    }
+    return {
+      chatMessage: "I encountered an error while thinking.",
+      action: { type: "none" },
+    };
   }
 };

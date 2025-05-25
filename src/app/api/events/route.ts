@@ -1,7 +1,15 @@
+import fs from "fs"; // Import Node.js fs module
+import path from "path"; // Import Node.js path module
+
 import { NextRequest, NextResponse } from "next/server";
 
+import { generateAiVisionResponse } from "@/app/actions/generateMessage";
 import { EventSchema } from "@/domain";
-import { ValidatedEyeUpdatePayloadSchema } from "@/domain/event";
+import {
+  ValidatedEyeUpdatePayloadSchema,
+  AiVisionEventType,
+} from "@/domain/event";
+import { AI_USER_ID } from "@/hooks/useAiChat";
 
 import { broadcast, setEye, subscribe, unsubscribe } from "./sseStore";
 
@@ -82,6 +90,50 @@ export const POST = async (req: NextRequest) => {
     }
   } else if (eventData.type === "chatMessage") {
     broadcast(eventData);
+  } else if (eventData.type === "aiVision") {
+    const visionEvent = eventData as AiVisionEventType;
+    console.log(
+      `Received aiVision event for user ${visionEvent.userId}, ` +
+        `image length: ${visionEvent.imageDataUrl.length}, ` +
+        `chat history length: ${visionEvent.chatHistory.length}`,
+    );
+
+    // Save the image for debugging
+    try {
+      const base64Data = visionEvent.imageDataUrl.split(",")[1];
+      if (base64Data) {
+        const imageBuffer = Buffer.from(base64Data, "base64");
+        const imageName = `vision_${visionEvent.userId}_${Date.now()}.png`;
+        const imageDir = path.join(process.cwd(), "debug_images"); // Save in project root/debug_images
+
+        if (!fs.existsSync(imageDir)) {
+          fs.mkdirSync(imageDir, { recursive: true });
+        }
+
+        const imagePath = path.join(imageDir, imageName);
+        fs.writeFileSync(imagePath, imageBuffer);
+        console.log(`Saved debug image to: ${imagePath}`);
+      } else {
+        console.error(
+          "Could not extract base64 data from imageDataUrl for saving.",
+        );
+      }
+    } catch (e) {
+      console.error("Error saving debug image:", e);
+    }
+
+    // Asynchronously call the AI vision processing. Do not await.
+    // The response will be sent back as a new 'chatMessage' event.
+    generateAiVisionResponse(
+      visionEvent.imageDataUrl,
+      visionEvent.chatHistory,
+      AI_USER_ID,
+    ).catch((error) => {
+      console.error(
+        "[API Events] Error during generateAiVisionResponse call:",
+        error,
+      );
+    });
   }
 
   return NextResponse.json({ ok: true });

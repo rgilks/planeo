@@ -6,8 +6,14 @@ import { Vector3 } from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { useEventSource, useEyePositionReporting } from "@/hooks";
+import { downscaleImage } from "@/lib/utils";
 import { useInputControlStore } from "@/stores/inputControlStore";
+import { useMessageStore } from "@/stores/messageStore";
 import { Eyes } from "@components/Eyes";
+
+const DOWNSCALED_WIDTH = 320;
+const DOWNSCALED_HEIGHT = 200;
+const CAPTURE_INTERVAL_MS = 5000; // 5 seconds
 
 // Basic keyboard state
 const useKeyboardControls = () => {
@@ -28,13 +34,45 @@ const useKeyboardControls = () => {
 };
 
 const CanvasContent = ({ myId }: { myId: string }) => {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   useEyePositionReporting(myId, camera);
   const keyboard = useKeyboardControls();
   const isChatInputFocused = useInputControlStore((s) => s.isChatInputFocused);
+  const messages = useMessageStore((s) => s.messages);
+  const lastCaptureTimeRef = useRef<number>(0); // Throttle capture
 
   const zoomSpeed = 0.5;
   const rotationSpeed = 0.03;
+
+  const captureCanvas = async () => {
+    const image = gl.domElement.toDataURL("image/png");
+    try {
+      const downscaledImageDataUrl = await downscaleImage(
+        image,
+        DOWNSCALED_WIDTH,
+        DOWNSCALED_HEIGHT,
+      );
+
+      const visionPayload = {
+        type: "aiVision" as const,
+        userId: myId,
+        timestamp: Date.now(),
+        imageDataUrl: downscaledImageDataUrl,
+        chatHistory: messages, // Get current messages from the store
+      };
+
+      // Send to server
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(visionPayload),
+      }).catch(console.error); // Basic error handling
+
+      console.log("AI Vision event sent with downscaled image.");
+    } catch (error) {
+      console.error("Failed to capture or send canvas image:", error);
+    }
+  };
 
   useEffect(() => {
     camera.position.y = EYE_Y_POSITION;
@@ -78,6 +116,11 @@ const CanvasContent = ({ myId }: { myId: string }) => {
     }
 
     if (didMove || didRotate) {
+      const now = Date.now();
+      if (now - lastCaptureTimeRef.current > CAPTURE_INTERVAL_MS) {
+        setTimeout(() => captureCanvas(), 0);
+        lastCaptureTimeRef.current = now;
+      }
     }
   });
 
@@ -138,6 +181,7 @@ const Scene = ({ myId }: { myId: string }) => {
 
   return (
     <Canvas
+      gl={{ preserveDrawingBuffer: true }}
       camera={{ position: [48, 20, 120], near: 1, far: 2500, fov: 75 }}
       style={{ width: "100%", height: "100%" }}
       shadows

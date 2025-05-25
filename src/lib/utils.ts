@@ -165,3 +165,31 @@ export const areVec3sEqual = (
   }
   return true;
 };
+
+export const downscaleImage = (
+  dataUrl: string,
+  newWidth: number,
+  newHeight: number,
+): Promise<string> =>
+  new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      // Cannot downscale in non-browser environment
+      return resolve(dataUrl);
+    }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        return reject(new Error("Failed to get 2D context for downscaling"));
+      }
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = (err) => {
+      reject(err);
+    };
+    img.src = dataUrl;
+  });

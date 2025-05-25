@@ -54,7 +54,7 @@ const CanvasContent = ({ myId }: { myId: string }) => {
       const downscaledImageDataUrl = await downscaleImage(
         image,
         DOWNSCALED_WIDTH,
-        DOWNSCALED_HEIGHT
+        DOWNSCALED_HEIGHT,
       );
 
       const visionPayload = {

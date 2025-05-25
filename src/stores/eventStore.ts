@@ -7,6 +7,8 @@ import {
   ChatMessageEventType,
 } from "@/domain/event";
 
+import { useEyeStore } from "./eyeStore"; // Import the singular eyeStore
+
 // Define listener types
 type EyeUpdateEventListener = (event: EyeUpdateType) => void;
 type ChatMessageEventListener = (event: ChatMessageEventType) => void;
@@ -27,6 +29,7 @@ interface EventStoreState {
     chatMessage: ChatMessageEventListener[];
   };
   cachedEyeUpdates: EyeUpdateType[];
+  eyes: EyeUpdateType[];
 }
 
 interface EventStoreActions {
@@ -50,6 +53,7 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       chatMessage: [],
     },
     cachedEyeUpdates: [],
+    eyes: [],
 
     connect: () => {
       if (get().eventSourceInstance || get().isConnected) {
@@ -136,11 +140,26 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
         if (parsedEvent.success) {
           const data = parsedEvent.data;
           if (data.type === "eyeUpdate") {
+            set((state) => {
+              const eyeUpdate = data as EyeUpdateType;
+              const existingEyeIndex = state.eyes.findIndex(
+                (e) => e.id === eyeUpdate.id,
+              );
+              if (existingEyeIndex > -1) {
+                state.eyes[existingEyeIndex] = eyeUpdate;
+              } else {
+                state.eyes.push(eyeUpdate);
+              }
+            });
+
+            // Also update the legacy eyeStore for tests
+            useEyeStore.getState().setEye(data as EyeUpdateType);
+
             if (get().listeners.eyeUpdate.length === 0) {
-              console.log("Caching eyeUpdate event, no listeners yet:", data);
-              set((state) => {
-                state.cachedEyeUpdates.push(data as EyeUpdateType);
-              });
+              // console.log("Caching eyeUpdate event, no listeners yet:", data);
+              // set((state) => {
+              //   state.cachedEyeUpdates.push(data as EyeUpdateType);
+              // });
             } else {
               [...get().listeners.eyeUpdate].forEach((callback) =>
                 callback(data as EyeUpdateType),

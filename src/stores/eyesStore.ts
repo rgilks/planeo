@@ -24,6 +24,7 @@ type EyesActions = {
   ) => void;
   updateEyeAnimations: (delta: number) => void;
   removeEye: (id: string) => void;
+  setManyManagedEyes: (newEyes: Record<string, EyeState>) => void;
 };
 
 export type { EyeState as ManagedEye };
@@ -42,6 +43,20 @@ export const useEyesStore = create<EyesState & EyesActions>()(
           const existingEye = state.managedEyes[eyeData.id];
 
           if (existingEye) {
+            console.log(
+              `[eyesStore.syncEyes] Found existingEye for ${eyeData.id}:`,
+              JSON.stringify(existingEye),
+            );
+            if (
+              !existingEye.targetPosition ||
+              !(existingEye.targetPosition instanceof Vector3)
+            ) {
+              console.error(
+                `[eyesStore.syncEyes] ERROR: existingEye.targetPosition is problematic for ${eyeData.id}:`,
+                existingEye.targetPosition,
+              );
+            }
+
             if (eyeData.p) {
               const positionVec = new Vector3(...eyeData.p);
               positionVec.y = EYE_Y_POSITION;
@@ -137,6 +152,11 @@ export const useEyesStore = create<EyesState & EyesActions>()(
     removeEye: (id: string) =>
       set((state) => {
         delete state.managedEyes[id];
+      }),
+
+    setManyManagedEyes: (newEyes) =>
+      set((state) => {
+        state.managedEyes = newEyes;
       }),
   })),
 );

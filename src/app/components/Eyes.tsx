@@ -4,7 +4,7 @@ import { useRef, useEffect, useMemo } from "react";
 import { Group, TextureLoader, ShaderMaterial, Vector3 } from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
-import { useEyes } from "@/hooks/useEyes";
+import { useEventStore } from "@/stores/eventStore";
 import { useEyesStore, ManagedEye } from "@/stores/eyesStore";
 
 import { Eye } from "./Eye";
@@ -35,12 +35,13 @@ const fragmentShader = `
 
 export const Eyes = ({ myId }: { myId: string }) => {
   const refs = useRef<Record<string, Group>>({});
-  const eyesData = useEyes();
   const eyeTexture = useLoader(TextureLoader, EYE_TEXTURE_PATH);
 
   const managedEyes = useEyesStore((s) => s.managedEyes);
   const syncEyes = useEyesStore((s) => s.syncEyes);
   const updateEyeAnimations = useEyesStore((s) => s.updateEyeAnimations);
+
+  const eyesFromEventStore = useEventStore((state) => state.eyes);
 
   const baseShaderMaterial = useMemo(
     () =>
@@ -57,8 +58,10 @@ export const Eyes = ({ myId }: { myId: string }) => {
   );
 
   useEffect(() => {
-    syncEyes(eyesData, myId, baseShaderMaterial);
-  }, [eyesData, myId, baseShaderMaterial, syncEyes]);
+    if (Array.isArray(eyesFromEventStore) && eyesFromEventStore.length > 0) {
+      syncEyes(eyesFromEventStore, myId, baseShaderMaterial);
+    }
+  }, [eyesFromEventStore, myId, baseShaderMaterial, syncEyes]);
 
   useFrame((_, delta) => {
     updateEyeAnimations(delta);

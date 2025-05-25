@@ -1,5 +1,8 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
+
 import {
   GoogleGenAI,
   HarmCategory,
@@ -204,35 +207,64 @@ export const generateAiActionAndChat = async (
     return undefined;
   }
 
+  // --- BEGIN: Save debug image ---
+  try {
+    const debugImagesDir = path.join(process.cwd(), "debug_images");
+    if (!fs.existsSync(debugImagesDir)) {
+      fs.mkdirSync(debugImagesDir, { recursive: true });
+      console.log(
+        `[AI Action & Chat] Created debug_images directory: ${debugImagesDir}`,
+      );
+    }
+    const imageName = `${aiAgentId}_${Date.now()}.png`;
+    const imagePath = path.join(debugImagesDir, imageName);
+    const imageBuffer = Buffer.from(base64ImageData, "base64");
+    fs.writeFileSync(imagePath, imageBuffer);
+    console.log(
+      `[AI Action & Chat] Saved debug image for ${aiAgentId} to ${imagePath}`,
+    );
+  } catch (error) {
+    console.error(
+      `[AI Action & Chat] Failed to save debug image for ${aiAgentId}:`,
+      error,
+    );
+  }
+  // --- END: Save debug image ---
+
   const historySlice = chatHistory.slice(-10); // Slightly longer history for context
 
   // System prompt instructing the AI about its environment, capabilities, and desired JSON output
-  const systemPrompt = `You are ${agentDisplayName}, an AI agent in a 3D grid world. You can see the world from your perspective.
-You can communicate by providing a 'chat' message.
-You can move by providing an 'action'. Possible actions are:
+  const systemPrompt = `You are ${agentDisplayName}. You have suddenly materialized in this place.
+You have no memory of how you got here or who you are.
+You feel a little disoriented and cautious, perhaps a bit afraid.
+
+Communicate your thoughts, observations (based on what you see), and feelings in brief chat messages as you try to understand your surroundings.
+What are you thinking? What are you feeling based on your current view?
+
+You can also move. Possible actions are:
 - Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares }
 - Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees }
 - No action: { "type": "none" } or null
 
-Based on the image you see and the recent chat history, decide on your next chat message (optional) and your next action.
+Based on what you see, think, and feel, decide on your next chat message AND your next action.
 Your entire response MUST be a single JSON object matching this structure:
 {
-  "chat": "your message here, or omit if no message",
+  "chat": "Your brief thought, observation, or feeling here",
   "action": { "type": "move", "direction": "forward", "distance": 1 }
 }
 Example if turning:
 {
-  "chat": "Turning left.",
-  "action": { "type": "turn", "direction": "left", "degrees": 30 }
+  "chat": "What's over there? I'll turn left to see.",
+  "action": { "type": "turn", "direction": "left", "degrees": 45 }
 }
-Example if no action:
+Example if no action (you should still chat):
 {
-  "chat": "I'll stay put.",
+  "chat": "I'm not sure what to do. I'll wait and see.",
   "action": { "type": "none" }
 }
-If you don't want to say anything, you can omit the "chat" field or set it to an empty string.
-Focus on very short, simple actions and observations. Do not get stuck. Try to explore.
-The grid squares are roughly your body size. Distances are in grid squares. Degrees are for turning.
+
+Always provide a chat message. Keep your messages and actions short and simple. Try to explore and make sense of this place.
+The grid squares are roughly your body size. Distances are in grid squares (usually 1). Degrees for turning (e.g., 30, 45, 90).
 Current chat history (last 10 messages):`;
 
   const textPromptParts: string[] = [systemPrompt];

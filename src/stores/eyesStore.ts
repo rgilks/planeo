@@ -46,8 +46,7 @@ export const useEyesStore = create<EyesState & EyesActions>()(
 
           if (existingEye) {
             console.log(
-              `[eyesStore.syncEyes] Found existingEye for ${eyeData.id}:`,
-              JSON.stringify(existingEye),
+              `[eyesStore.syncEyes] Found existingEye for ${eyeData.id}`,
             );
             if (
               !existingEye.targetPosition ||

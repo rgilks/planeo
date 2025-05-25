@@ -49,24 +49,25 @@ const CanvasContent = ({ myId }: { myId: string }) => {
 
     let didMove = false;
 
-    if (keyboard.current["w"]) {
+    // Forward/backward movement (W/S/ArrowUp/ArrowDown)
+    if (keyboard.current["w"] || keyboard.current["arrowup"]) {
       camera.position.addScaledVector(direction, zoomSpeed);
       didMove = true;
     }
-    if (keyboard.current["s"]) {
+    if (keyboard.current["s"] || keyboard.current["arrowdown"]) {
       camera.position.addScaledVector(direction, -zoomSpeed);
       didMove = true;
     }
 
-    // Basic strafing (optional, can be expanded)
+    // Strafing movement (A/D/ArrowLeft/ArrowRight)
     const right = new Vector3();
-    right.crossVectors(camera.up, direction).normalize();
+    right.crossVectors(direction, camera.up).normalize(); // Calculate right vector (direction X up)
 
-    if (keyboard.current["a"]) {
+    if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
       camera.position.addScaledVector(right, -moveSpeed);
       didMove = true;
     }
-    if (keyboard.current["d"]) {
+    if (keyboard.current["d"] || keyboard.current["arrowright"]) {
       camera.position.addScaledVector(right, moveSpeed);
       didMove = true;
     }

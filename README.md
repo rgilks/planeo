@@ -10,4 +10,5 @@
 
 ## Recent Developments
 
+- **Arrow Key Navigation (2025-05-25):** Users can now move their viewpoint (eye) around the plane using the arrow keys (up, down, left, right) in addition to WASD controls. These movements are broadcast to other connected users in real-time.
 - **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes. More details can be found in `docs/rendering_issues.md`.

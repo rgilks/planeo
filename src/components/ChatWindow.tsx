@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid"; // For generating message IDs
 
+import { useAiChat } from "@/hooks/useAiChat"; // Import the new hook
 import { useInputControlStore } from "@/stores/inputControlStore"; // Added import
 import { useMessageStore } from "@/stores/messageStore";
 
@@ -23,6 +24,8 @@ export const ChatWindow = ({ myId }: ChatWindowProps) => {
   const setChatInputFocused = useInputControlStore(
     (s) => s.setChatInputFocused,
   ); // Added
+
+  useAiChat(myId); // Use the AI chat hook
 
   // const currentUserId = "User1"; // Will use myId as userId for now
 

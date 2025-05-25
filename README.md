@@ -8,6 +8,22 @@
   <a href='https://ko-fi.com/N4N31DPNUS' target='_blank'><img height='36' style='border:0px;height:36px;margin-bottom: 20px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 </div>
 
+## Core Features
+
+- **3D Environment:** Interactive 3D space built with React Three Fiber.
+- **Real-time Multi-user Interaction:** See other users' movements (represented as eyeballs) in real-time using Server-Sent Events (SSE).
+- **Chat Functionality:** Send and receive messages in a shared chat window.
+- **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
+
+## Planned Features
+
+The following features are planned for future development:
+
+- **Physics Integration:** Using Rapier3D for realistic physics interactions.
+- **AI Services:** Potential integration with Google Cloud Text-to-Speech and Google GenAI.
+- **Authentication:** User authentication via NextAuth.
+- **Database Integration:** Utilizing a local SQLite database via better-sqlite3 for persistent data storage.
+
 ## Recent Developments
 
 - **Chat Functionality (2025-05-25):** Users can now send and receive messages in a chat window. Messages are displayed with user identifiers and timestamps.

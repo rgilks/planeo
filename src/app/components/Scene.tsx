@@ -12,6 +12,7 @@ import { downscaleImage } from "@/lib/utils";
 import { useInputControlStore } from "@/stores/inputControlStore";
 import { useMessageStore } from "@/stores/messageStore";
 import { useSimulationStore } from "@/stores/simulationStore";
+import { AIAgentViews } from "@components/AIAgentViews";
 import { Eyes } from "@components/Eyes";
 import { FallingCubes } from "@components/FallingCubes";
 import { StartOverlay } from "@components/StartOverlay";
@@ -193,6 +194,7 @@ const Scene = ({ myId }: { myId: string }) => {
 
   return (
     <>
+      <AIAgentViews />
       <Canvas
         gl={{ preserveDrawingBuffer: true }}
         camera={{ position: [48, 20, 120], near: 1, far: 2500, fov: 75 }}

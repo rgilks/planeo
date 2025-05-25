@@ -23,22 +23,21 @@ const HomePage = () => {
         </div>
       </main>
       <ChatToggleButton />
-      {isChatVisible && (
-        <div
-          style={{
-            position: "fixed",
-            right: "10px",
-            top: "10px",
-            height: "calc(100vh - 20px)",
-            width: "300px",
-            zIndex: 1000,
-            borderRadius: "8px",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-          }}
-        >
-          <ChatWindow myId={myId} />
-        </div>
-      )}
+      <div
+        style={{
+          position: "fixed",
+          right: "10px",
+          top: "10px",
+          height: "calc(100vh - 20px)",
+          width: "300px",
+          zIndex: 1000,
+          borderRadius: "8px",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+          display: isChatVisible ? "block" : "none",
+        }}
+      >
+        <ChatWindow myId={myId} />
+      </div>
     </>
   );
 };

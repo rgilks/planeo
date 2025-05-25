@@ -20,7 +20,6 @@ import { useMessageStore } from "@/stores/messageStore";
 import type { EyeUpdateType, Vec3 as DomainVec3 } from "@/domain";
 import type { AIAction } from "@/domain/aiAction";
 
-
 const RENDER_INTERVAL_MS = 7000; // How often each AI thinks
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 200;

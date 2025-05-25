@@ -1,7 +1,5 @@
 "use client";
 
-// import { useInputControlStore } from "@/stores/inputControlStore";
-import { useChatStore } from "@/stores/chatStore";
 import { useMessageStore } from "@/stores/messageStore";
 
 import { ChatMessage } from "./ChatMessage";
@@ -12,11 +10,6 @@ interface ChatWindowProps {
 
 export const ChatWindow = ({ myId }: ChatWindowProps) => {
   const messages = useMessageStore((s) => s.messages);
-  const isChatVisible = useChatStore((state) => state.isChatVisible);
-
-  if (!isChatVisible) {
-    return null;
-  }
 
   return (
     <div

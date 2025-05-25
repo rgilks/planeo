@@ -1,16 +1,18 @@
 import { Grid } from "@react-three/drei";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { Physics } from "@react-three/rapier";
 import { useRef, useEffect } from "react";
 import { Vector3 } from "three";
 
-import { EYE_Y_POSITION } from "@/domain/sceneConstants";
+import { EYE_Y_POSITION, GROUND_Y_POSITION } from "@/domain/sceneConstants";
 import { useEventSource, useEyePositionReporting } from "@/hooks";
 import { useAIAgentController } from "@/hooks/useAIAgentController";
 import { downscaleImage } from "@/lib/utils";
 import { useInputControlStore } from "@/stores/inputControlStore";
 import { useMessageStore } from "@/stores/messageStore";
 import { Eyes } from "@components/Eyes";
+import { FallingCubes } from "@components/FallingCubes";
 
 const DOWNSCALED_WIDTH = 320;
 const DOWNSCALED_HEIGHT = 200;
@@ -156,7 +158,7 @@ const CanvasContent = ({ myId }: { myId: string }) => {
         />
       </group>
       <Grid
-        position={[0, -20 + 0.01, 0]}
+        position={[0, GROUND_Y_POSITION + 0.01, 0]}
         args={[1000, 1000]}
         cellSize={10}
         cellThickness={1}
@@ -189,7 +191,10 @@ const Scene = ({ myId }: { myId: string }) => {
       shadows
     >
       <color attach="background" args={["#000"]} />
-      <CanvasContent myId={myId} />
+      <Physics>
+        <CanvasContent myId={myId} />
+        <FallingCubes />
+      </Physics>
     </Canvas>
   );
 };

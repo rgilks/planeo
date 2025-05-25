@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { synthesizeSpeechAction } from "@/app/actions/tts";
 
@@ -12,17 +12,12 @@ interface ChatMessageProps {
 }
 
 export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
-  const [audioStatus, setAudioStatus] = useState<
-    "idle" | "loading" | "playing" | "error"
-  >("idle");
-  const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const isMyMessage = message.userId === currentUserId;
 
   useEffect(() => {
     if (isMyMessage || message.text.startsWith("/")) {
-      // Don't speak own messages or commands
       return;
     }
 
@@ -30,8 +25,6 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
 
     const playAudio = async () => {
       if (!isMounted) return;
-      setAudioStatus("loading");
-      setError(null);
 
       try {
         const result = await synthesizeSpeechAction({
@@ -43,67 +36,63 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
 
         if (result.error) {
           console.error("[ChatMessage TTS] Error from action:", result.error);
-          setError(result.error);
-          setAudioStatus("error");
         } else if (result.rateLimitError) {
           console.warn(
             "[ChatMessage TTS] Rate limit error:",
             result.rateLimitError.message,
           );
-          setError(result.rateLimitError.message);
-          setAudioStatus("error"); // Or a specific 'rate-limited' status
         } else if (result.audioBase64) {
           if (audioRef.current) {
             audioRef.current.pause();
-            audioRef.current.src = ""; // Release old audio object
+            audioRef.current.src = "";
           }
           const newAudio = new Audio(
             "data:audio/mp3;base64," + result.audioBase64,
           );
           audioRef.current = newAudio;
 
-          newAudio.onplaying = () => {
-            if (isMounted) setAudioStatus("playing");
-          };
+          newAudio.onplaying = () => {};
+
           newAudio.onended = () => {
-            if (isMounted) setAudioStatus("idle");
-            if (audioRef.current) {
-              audioRef.current.src = ""; // Release audio object after playing
+            if (isMounted && audioRef.current) {
+              audioRef.current.src = "";
               audioRef.current = null;
             }
           };
+
           newAudio.onerror = (e) => {
             if (isMounted) {
-              console.error("[ChatMessage TTS] Audio playback error:", e);
-              setError("Failed to play audio.");
-              setAudioStatus("error");
+              console.error(
+                "[ChatMessage TTS] Audio playback error event (onerror):",
+                e,
+                "Audio element error object:",
+                audioRef.current?.error,
+              );
             }
           };
-          await newAudio.play().catch((e) => {
+
+          try {
+            await newAudio.play();
+          } catch (playError) {
             if (isMounted) {
-              console.error("[ChatMessage TTS] Audio play() rejected:", e);
-              setError("Audio playback was prevented.");
-              setAudioStatus("error");
+              console.warn(
+                "[ChatMessage TTS] Audio play() promise rejected (likely autoplay):",
+                playError,
+              );
             }
-          });
+          }
         } else {
           if (isMounted) {
-            setError("No audio data received.");
-            setAudioStatus("error");
+            console.warn("[ChatMessage TTS] No audio data received.");
           }
         }
       } catch (e) {
         if (isMounted) {
           console.error("[ChatMessage TTS] Failed to synthesize speech:", e);
-          setError(e instanceof Error ? e.message : "Unknown TTS error.");
-          setAudioStatus("error");
         }
       }
     };
 
-    // Play audio when the message changes and it's not from the current user
-    // This assumes `message` object identity changes for new messages.
-    // If messages can be updated in place, this logic might need adjustment.
     if (message.id && !isMyMessage) {
       playAudio();
     }
@@ -115,34 +104,11 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
         audioRef.current.onplaying = null;
         audioRef.current.onended = null;
         audioRef.current.onerror = null;
-        audioRef.current.src = ""; // Attempt to release resources
+        audioRef.current.src = "";
         audioRef.current = null;
       }
     };
   }, [message.id, message.text, message.userId, isMyMessage, currentUserId]);
-
-  // Simple visual feedback for TTS status (optional)
-  const getStatusIndicator = () => {
-    if (isMyMessage) return null;
-    switch (audioStatus) {
-      case "loading":
-        return (
-          <span style={{ fontSize: "0.8em", marginLeft: "5px" }}>🎤...</span>
-        );
-      case "playing":
-        return (
-          <span style={{ fontSize: "0.8em", marginLeft: "5px" }}>🎤▶️</span>
-        );
-      case "error":
-        return (
-          <span style={{ fontSize: "0.8em", marginLeft: "5px", color: "red" }}>
-            🎤❌
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
 
   return (
     <div style={{ marginBottom: "5px", color: "#e0e0e0" }}>
@@ -150,12 +116,6 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
         {message.userId}:{" "}
       </span>
       <span>{message.text}</span>
-      {getStatusIndicator()}
-      {error && audioStatus === "error" && (
-        <div style={{ fontSize: "0.7em", color: "red", marginTop: "2px" }}>
-          TTS Error: {error}
-        </div>
-      )}
     </div>
   );
 };

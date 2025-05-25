@@ -27,7 +27,7 @@ The following features are planned for future development:
 
 ## Recent Developments
 
-- **Text-to-Speech for Chat (YYYY-MM-DD):** Implemented text-to-speech for chat messages. Messages from other users are now read aloud using distinct, consistent voices. The system utilizes Google Cloud TTS. More details can be found in `docs/text-to-speech.md`.
+- **Text-to-Speech for Chat (2025-05-25):** Implemented text-to-speech for chat messages. Messages from other users are now read aloud using distinct, consistent voices. The system utilizes Google Cloud TTS. More details can be found in `docs/text-to-speech.md`.
 - **Chat Functionality (2025-05-25):** Users can now send and receive messages in a chat window. Messages are displayed with user identifiers and timestamps.
 - **Keyboard-Only Look Controls (2025-05-25):** Player look (camera orientation) is now controlled exclusively by keyboard. A/D keys or Left/Right arrow keys rotate the view left/right (yaw). Mouse look has been disabled. W/S or Up/Down arrow keys move forward/backward relative to the current view direction.
 - **Arrow Key Navigation (2025-05-25):** Users can now move their viewpoint (eye) around the plane using the arrow keys (up, down, left, right) in addition to WASD controls. These movements are broadcast to other connected users in real-time.

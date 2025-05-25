@@ -65,7 +65,7 @@ async function performSynthesis(
   ttsClient: TextToSpeechClient,
   text: string,
   voiceName: string, // voiceName will always be determined before this call
-  languageCode: string
+  languageCode: string,
 ): Promise<{ audioBase64?: string; error?: string }> {
   try {
     const request = {
@@ -80,7 +80,7 @@ async function performSynthesis(
     };
 
     console.log(
-      `[TTS Core] Requesting synthesis with voice: ${voiceName}, lang: ${languageCode}`
+      `[TTS Core] Requesting synthesis with voice: ${voiceName}, lang: ${languageCode}`,
     );
 
     const [response] = await ttsClient.synthesizeSpeech(request);
@@ -91,7 +91,7 @@ async function performSynthesis(
     }
 
     const audioBase64 = Buffer.from(
-      response.audioContent as Uint8Array
+      response.audioContent as Uint8Array,
     ).toString("base64");
     console.log("[TTS Core] Synthesis successful.");
     return { audioBase64: audioBase64 };
@@ -104,14 +104,14 @@ async function performSynthesis(
 }
 
 export const synthesizeSpeechAction = async (
-  params: SynthesizeSpeechParams
+  params: SynthesizeSpeechParams,
 ): Promise<SynthesizeSpeechResult> => {
   const validationResult = SynthesizeSpeechParamsSchema.safeParse(params);
 
   if (!validationResult.success) {
     console.error(
       "[TTS Action] Invalid parameters:",
-      validationResult.error.flatten()
+      validationResult.error.flatten(),
     );
     return {
       error: `Invalid parameters: ${validationResult.error.flatten().fieldErrors}`,
@@ -146,13 +146,13 @@ export const synthesizeSpeechAction = async (
       ttsClient,
       text,
       voiceName,
-      languageCode
+      languageCode,
     );
     return synthesisResult;
   } catch (error) {
     console.error(
       "[TTS Action] Unexpected error during synthesis process:",
-      error
+      error,
     );
     return {
       error:

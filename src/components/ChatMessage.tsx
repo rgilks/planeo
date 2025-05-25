@@ -73,7 +73,7 @@ export const ChatMessage = ({ message, currentUserId }: ChatMessageProps) => {
 
           newAudio.onerror = (e) => {
             if (isMounted) {
-              console.error(
+              console.warn(
                 "[ChatMessage TTS] Audio playback error event (onerror):",
                 e,
                 "Audio element error object:",

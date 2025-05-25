@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { EventSchema } from "@/domain";
 import { getAIAgents } from "@/domain/aiAgent";
 import { ValidatedEyeUpdatePayloadSchema } from "@/domain/event";
+import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 
 import { broadcast, setEye, subscribe, unsubscribe, getEyes } from "./sseStore";
 
@@ -15,7 +16,11 @@ export const GET = async () => {
   agents.forEach((agent, index) => {
     if (!currentEyes.get(agent.id)) {
       const xPosition = 20 * (index + 1) * (index % 2 === 0 ? 1 : -1); // Spread them out
-      setEye(agent.id, [xPosition, 0, 5], [xPosition, 0, 0]); // Position and lookAt
+      setEye(
+        agent.id,
+        [xPosition, EYE_Y_POSITION, 5],
+        [xPosition, EYE_Y_POSITION, 0]
+      );
       agentEyesInitialized = true;
     }
   });
@@ -64,14 +69,14 @@ export const POST = async (req: NextRequest) => {
     // Log the received payload for POST requests on a single line
     console.log(
       "POST /api/events - Received payload:",
-      JSON.stringify(payload),
+      JSON.stringify(payload)
     );
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     console.error("POST /api/events - Invalid JSON payload:", error.message);
     return NextResponse.json(
       { error: "Invalid JSON payload", details: error.message },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -83,7 +88,7 @@ export const POST = async (req: NextRequest) => {
         error: "Invalid event structure",
         details: parsedEvent.error.flatten(),
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -98,14 +103,14 @@ export const POST = async (req: NextRequest) => {
           error: "Invalid eyeUpdate payload",
           details: validatedEyeData.error.flatten(),
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (validatedEyeData.data.p || validatedEyeData.data.l) {
       setEye(
         validatedEyeData.data.id,
         validatedEyeData.data.p,
-        validatedEyeData.data.l,
+        validatedEyeData.data.l
       );
       // No need to broadcast eye updates here, sseStore handles broadcasting periodic snapshots
     }

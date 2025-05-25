@@ -52,6 +52,10 @@ export const setEye = (
   broadcast(msg);
 };
 
+export const getEyes = (): Map<string, EventEyeUpdateType> => {
+  return eyes;
+};
+
 export const broadcast = (msg: EventType): void => {
   const data = `data:${JSON.stringify(msg)}\n\n`;
   for (const w of subs) {

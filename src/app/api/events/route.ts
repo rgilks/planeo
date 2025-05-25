@@ -1,19 +1,32 @@
-import fs from "fs"; // Import Node.js fs module
-import path from "path"; // Import Node.js path module
-
 import { NextRequest, NextResponse } from "next/server";
 
-import { generateAiVisionResponse } from "@/app/actions/generateMessage";
 import { EventSchema } from "@/domain";
-import { AI_USER_ID } from "@/domain/aiConstants";
-import {
-  ValidatedEyeUpdatePayloadSchema,
-  AiVisionEventType,
-} from "@/domain/event";
+import { getAIAgents } from "@/domain/aiAgent";
+import { ValidatedEyeUpdatePayloadSchema } from "@/domain/event";
 
-import { broadcast, setEye, subscribe, unsubscribe } from "./sseStore";
+import { broadcast, setEye, subscribe, unsubscribe, getEyes } from "./sseStore";
 
 export const GET = async () => {
+  // Initialize AI Agent positions if not already done
+  const currentEyes = getEyes();
+  const agents = getAIAgents();
+  let agentEyesInitialized = false;
+
+  agents.forEach((agent, index) => {
+    if (!currentEyes.get(agent.id)) {
+      const xPosition = 20 * (index + 1) * (index % 2 === 0 ? 1 : -1); // Spread them out
+      setEye(agent.id, [xPosition, 0, 5], [xPosition, 0, 0]); // Position and lookAt
+      agentEyesInitialized = true;
+    }
+  });
+
+  if (agentEyesInitialized) {
+    console.log("[API Events] Initialized default AI agent eye positions.");
+    // Broadcast an empty eyeUpdate to trigger clients to fetch all eyes including new AI agents
+    // Or, more robustly, have clients fetch all on connect.
+    // For now, let's rely on the fact that new connection will get all current eyes.
+  }
+
   const encoder = new TextEncoder();
   let writer: { write: (data: string) => void; closed: boolean };
 
@@ -94,53 +107,10 @@ export const POST = async (req: NextRequest) => {
         validatedEyeData.data.p,
         validatedEyeData.data.l,
       );
+      // No need to broadcast eye updates here, sseStore handles broadcasting periodic snapshots
     }
   } else if (eventData.type === "chatMessage") {
-    broadcast(eventData);
-  } else if (eventData.type === "aiVision") {
-    const visionEvent = eventData as AiVisionEventType;
-    console.log(
-      `Received aiVision event for user ${visionEvent.userId}, ` +
-        `image length: ${visionEvent.imageDataUrl.length}, ` +
-        `chat history length: ${visionEvent.chatHistory.length}`,
-    );
-
-    // Save the image for debugging
-    try {
-      const base64Data = visionEvent.imageDataUrl.split(",")[1];
-      if (base64Data) {
-        const imageBuffer = Buffer.from(base64Data, "base64");
-        const imageName = `vision_${visionEvent.userId}_${Date.now()}.png`;
-        const imageDir = path.join(process.cwd(), "debug_images"); // Save in project root/debug_images
-
-        if (!fs.existsSync(imageDir)) {
-          fs.mkdirSync(imageDir, { recursive: true });
-        }
-
-        const imagePath = path.join(imageDir, imageName);
-        fs.writeFileSync(imagePath, imageBuffer);
-        console.log(`Saved debug image to: ${imagePath}`);
-      } else {
-        console.error(
-          "Could not extract base64 data from imageDataUrl for saving.",
-        );
-      }
-    } catch (e) {
-      console.error("Error saving debug image:", e);
-    }
-
-    // Asynchronously call the AI vision processing. Do not await.
-    // The response will be sent back as a new 'chatMessage' event.
-    generateAiVisionResponse(
-      visionEvent.imageDataUrl,
-      visionEvent.chatHistory,
-      AI_USER_ID,
-    ).catch((error) => {
-      console.error(
-        "[API Events] Error during generateAiVisionResponse call:",
-        error,
-      );
-    });
+    broadcast(eventData); // Broadcast all chat messages
   }
 
   return NextResponse.json({ ok: true });

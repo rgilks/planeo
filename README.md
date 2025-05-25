@@ -12,7 +12,7 @@
 
 - **3D Environment:** Interactive 3D space built with React Three Fiber.
 - **Real-time Multi-user Interaction:** See other users' movements (represented as eyeballs) in real-time using Server-Sent Events (SSE).
-- **AI Agents:** A configurable number of AI agents inhabit the environment, capable of generating chat messages and responding to visual stimuli. Their actions are broadcast in real-time. Agent configurations are loaded from an environment variable. ([Details](/docs/ai-agents.md))
+- **AI Agents:** Two AI agents ("AI-1" and "AI-2") are present by default, each with a unique eyeball and chat identity. Their number and properties can be configured via the `AI_AGENTS_CONFIG` environment variable. They can generate chat messages and respond to visual stimuli, with actions broadcast in real-time. ([Details](/docs/ai-agents.md))
 - **Chat Functionality:** Send and receive messages in a shared chat window.
 - **Text-to-Speech (TTS):** Chat messages from other users are spoken aloud with a distinct voice for each user. ([Details](/docs/text-to-speech.md))
 - **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
@@ -28,6 +28,7 @@ The following features are planned for future development:
 
 ## Recent Developments
 
+- **Default Visible AI Agents & Unique Identities (YYYY-MM-DD):** Implemented default visibility for two AI agents ("AI-1", "AI-2") upon loading. They now have distinct names in chat and appear as separate entities in the 3D space. The system still supports configuration via `AI_AGENTS_CONFIG` for custom setups.
 - **Configurable AI Agents (YYYY-MM-DD):** Refactored the AI agent system to support a variable number of agents defined via the `AI_AGENTS_CONFIG` environment variable. This replaces the previously hardcoded two-agent system. See `docs/ai-agents.md` for more information.
 - **Multi-AI Agent System (YYYY-MM-DD):** Introduced two AI agents, Iris and Cyan, capable of independent chat and vision-based responses. Their activities are broadcast via the event stream. See `docs/ai-agents.md` for more information.
 - **Text-to-Speech for Chat (2025-05-25):** Implemented text-to-speech for chat messages. Messages from other users are now read aloud using distinct, consistent voices. The system utilizes Google Cloud TTS. More details can be found in `docs/text-to-speech.md`.

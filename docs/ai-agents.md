@@ -11,12 +11,14 @@ Planeo utilizes a configurable number of AI agents to interact with the user and
 AI agent definitions are managed in `src/domain/aiAgent.ts`. This file provides:
 
 - A Zod schema (`AIAgentSchema`) defining the structure of an AI agent (currently `id` and `displayName`). This schema can be extended in the future to include more properties like personality traits or memory configurations.
-- A function `getAIAgents(): AIAgent[]` which loads AI agent configurations from the `AI_AGENTS_CONFIG` environment variable. This variable should contain a JSON string representing an array of AI agent objects.
-  - Example `AI_AGENTS_CONFIG` in an `.env` file:
-    ```env
-    AI_AGENTS_CONFIG='[{"id":"ai-agent-001","displayName":"Agent1"},{"id":"ai-agent-002","displayName":"Agent2"}]'
-    ```
-  - If the environment variable is missing or contains invalid JSON, `getAIAgents()` will return an empty array and log a warning/error.
+- A function `getAIAgents(): AIAgent[]` which loads AI agent configurations.
+  - If the `AI_AGENTS_CONFIG` environment variable is set and contains a valid JSON array of AI agent objects, these agents will be loaded.
+    - Example `AI_AGENTS_CONFIG` in an `.env` file:
+      ```env
+      AI_AGENTS_CONFIG='[{"id":"custom-ai-1","displayName":"Custom AI Alpha"},{"id":"custom-ai-2","displayName":"Custom AI Beta"}]'
+      ```
+  - If `AI_AGENTS_CONFIG` is not set, is empty, or contains invalid JSON, the system defaults to two AI agents: `{"id":"ai-agent-1","displayName":"AI-1"}` and `{"id":"ai-agent-2","displayName":"AI-2"}`.
+  - These default agents will have their eyeball positions initialized in the 3D world automatically when a user connects.
 - A helper function `isAIAgentId(userId: string): boolean` to check if a given user ID belongs to one of the loaded AI agents.
 - A helper function `getAIAgentById(userId: string): AIAgent | undefined` to retrieve the full details of a specific AI agent by its ID.
 
@@ -26,11 +28,11 @@ This approach allows for a flexible number of AI agents to be defined through en
 
 ### Chat Message Generation
 
-When an AI agent generates a chat message (via `generateAiChatMessage` in `src/app/actions/generateMessage.ts`), the prompt history provided to the underlying language model correctly identifies messages from _any_ AI agent as originating from "AI". This ensures that the context for the responding AI is accurate, regardless of which AI agent spoke previously or how many agents are active.
+When an AI agent generates a chat message (via `generateAiChatMessage` in `src/app/actions/generateMessage.ts`), the prompt history provided to the underlying language model correctly identifies messages from other AI agents by their `displayName` (e.g., "AI-1", "AI-2", or a custom name). Messages from the AI agent that is currently generating the response are labeled as "You (AI)" in the prompt. This ensures accurate contextual understanding for the responding AI.
 
 ### Vision Response Generation
 
-For vision-based responses (via `generateAiVisionResponse`), the AI agent adopts a specific persona: an AI that has just awoken in a strange environment with no memories. The prompt system for this function is designed to reinforce this persona. Messages from other AI agents are treated as external user input from this persona's perspective.
+For vision-based responses (via `generateAiVisionResponse` in `src/app/actions/generateMessage.ts`), the first configured AI agent (either from `AI_AGENTS_CONFIG` or the default "AI-1") adopts a specific persona: an AI that has just awoken in a strange environment with no memories. The prompt system for this function is designed to reinforce this persona. Messages from other AI agents in the chat history are labeled with their `displayName`, or as "You (AI)" if the message is from the responding agent itself.
 
 ## Event Broadcasting
 

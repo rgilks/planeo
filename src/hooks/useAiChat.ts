@@ -3,44 +3,48 @@
 import { useEffect, useRef } from "react";
 
 import { generateAiChatMessage } from "@/app/actions/generateMessage";
-import { AI_USER_ID } from "@/domain/aiConstants";
+import { getAIAgents, isAIAgentId } from "@/domain/aiAgent";
 import { useMessageStore } from "@/stores/messageStore";
 
 export const useAiChat = (myId: string) => {
   const messages = useMessageStore((s) => s.messages);
-  const addMessage = useMessageStore((s) => s.addMessage); // We might not need this if action posts to /api/events
   const aiResponseInProgress = useRef(false);
 
   useEffect(() => {
+    const agents = getAIAgents();
+    if (agents.length === 0) {
+      // No AI agents configured, so nothing to do
+      return;
+    }
+    const respondingAgentId = agents[0].id; // First AI agent will respond
+
     if (messages.length === 0 || aiResponseInProgress.current) {
       return;
     }
 
     const lastMessage = messages[messages.length - 1];
 
-    // Don't respond to own messages or if AI is already thinking
-    if (lastMessage.userId === AI_USER_ID || lastMessage.userId === myId) {
-      // If the last message is from the current user, AI can respond.
-      // If it's from the AI itself, it shouldn't respond to avoid loops.
-      if (lastMessage.userId === AI_USER_ID) return;
+    // Don't respond if AI is already thinking
+    // Don't let AI respond to its own messages or other AI messages
+    if (isAIAgentId(lastMessage.userId)) {
+      return;
     }
 
-    // Only trigger if the last message was from the human user this AI is tied to.
-    // This fulfills the "for each user there is a one AI user that runs in their browser"
+    // Only trigger if the last message was from the human user (myId)
     if (lastMessage.userId !== myId) {
       return;
     }
 
     aiResponseInProgress.current = true;
 
-    // Simple throttle: wait a bit before AI responds
     const timerId = setTimeout(
       async () => {
-        console.log("[AI Hook] Triggering AI response...");
+        console.log(
+          `[AI Hook] Triggering AI response from agent: ${respondingAgentId}...`,
+        );
         try {
-          // Pass a copy of messages to avoid issues with mutations if store updates
           const currentChatHistory = [...messages];
-          await generateAiChatMessage(currentChatHistory, AI_USER_ID);
+          await generateAiChatMessage(currentChatHistory, respondingAgentId);
         } catch (error) {
           console.error("[AI Hook] Error getting AI response:", error);
         } finally {
@@ -48,11 +52,10 @@ export const useAiChat = (myId: string) => {
         }
       },
       1500 + Math.random() * 1000,
-    ); // Respond after 1.5-2.5 seconds
+    );
 
     return () => {
       clearTimeout(timerId);
-      // Potentially set aiResponseInProgress.current = false if request could be cancelled
     };
-  }, [messages, myId, addMessage]); // addMessage removed as action handles posting
+  }, [messages, myId]);
 };

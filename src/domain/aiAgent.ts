@@ -11,6 +11,11 @@ export type AIAgent = z.infer<typeof AIAgentSchema>;
 // Store the parsed agents to avoid reprocessing the env var on every call in the same context
 let parsedAIAgents: AIAgent[] | null = null;
 
+const defaultAIAgents: AIAgent[] = [
+  { id: "ai-agent-1", displayName: "AI-1" },
+  { id: "ai-agent-2", displayName: "AI-2" },
+];
+
 export const getAIAgents = (): AIAgent[] => {
   if (parsedAIAgents !== null) {
     return parsedAIAgents;
@@ -19,33 +24,40 @@ export const getAIAgents = (): AIAgent[] => {
   const configJson = process.env["AI_AGENTS_CONFIG"];
   if (!configJson) {
     console.warn(
-      "[AI Agents] AI_AGENTS_CONFIG environment variable is not set. No AI agents will be loaded.",
+      "[AI Agents] AI_AGENTS_CONFIG environment variable is not set. Using default AI agents.",
     );
-    parsedAIAgents = [];
-    return [];
+    parsedAIAgents = defaultAIAgents;
+    return parsedAIAgents;
   }
 
   try {
     const config = JSON.parse(configJson);
     const result = z.array(AIAgentSchema).safeParse(config);
-    if (result.success) {
+    if (result.success && result.data.length > 0) {
+      // Ensure data is not empty
       parsedAIAgents = result.data;
       console.log(
-        `[AI Agents] Successfully loaded ${result.data.length} AI agents.`,
+        `[AI Agents] Successfully loaded ${result.data.length} AI agents from AI_AGENTS_CONFIG.`,
       );
       return result.data;
     } else {
-      console.error(
-        "[AI Agents] Failed to parse AI_AGENTS_CONFIG:",
-        result.error.flatten(),
-      );
-      parsedAIAgents = [];
-      return [];
+      if (!result.success) {
+        console.error(
+          "[AI Agents] Failed to parse AI_AGENTS_CONFIG:",
+          result.error.flatten(),
+        );
+      } else {
+        console.warn(
+          "[AI Agents] AI_AGENTS_CONFIG was empty or invalid. Using default AI agents.",
+        );
+      }
+      parsedAIAgents = defaultAIAgents;
+      return parsedAIAgents;
     }
   } catch (error) {
     console.error("[AI Agents] Invalid JSON in AI_AGENTS_CONFIG:", error);
-    parsedAIAgents = [];
-    return [];
+    parsedAIAgents = defaultAIAgents;
+    return parsedAIAgents;
   }
 };
 

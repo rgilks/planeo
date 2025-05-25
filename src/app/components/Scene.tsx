@@ -6,6 +6,7 @@ import { Vector3 } from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { useEventSource, useEyePositionReporting } from "@/hooks";
+import { useAIAgentController } from "@/hooks/useAIAgentController";
 import { downscaleImage } from "@/lib/utils";
 import { useInputControlStore } from "@/stores/inputControlStore";
 import { useMessageStore } from "@/stores/messageStore";
@@ -36,6 +37,7 @@ const useKeyboardControls = () => {
 const CanvasContent = ({ myId }: { myId: string }) => {
   const { camera, gl } = useThree();
   useEyePositionReporting(myId, camera);
+  useAIAgentController(myId);
   const keyboard = useKeyboardControls();
   const isChatInputFocused = useInputControlStore((s) => s.isChatInputFocused);
   const messages = useMessageStore((s) => s.messages);

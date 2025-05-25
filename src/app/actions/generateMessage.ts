@@ -9,8 +9,10 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-import { isAIAgentId } from "@/domain/aiAgent";
+import { AIResponseSchema, type ParsedAIResponse } from "@/domain/aiAction";
+import { isAIAgentId, getAIAgentById } from "@/domain/aiAgent";
 import { Message, MessageSchema } from "@/domain/message";
+// Import only what is used in this file
 
 let genAIClient: GoogleGenAI | null = null;
 
@@ -134,8 +136,14 @@ export const generateAiChatMessage = async (
   const historySlice = chatHistory.slice(-5);
   const prompt =
     historySlice
-      .map((msg) => `${isAIAgentId(msg.userId) ? "AI" : "User"}: ${msg.text}`)
-      .join("\n") + "\nAI:";
+      .map((msg) => {
+        if (isAIAgentId(msg.userId)) {
+          const agent = getAIAgentById(msg.userId);
+          return `${msg.userId === aiUserId ? "You (AI)" : agent?.displayName || "AI"}: ${msg.text}`;
+        }
+        return `User: ${msg.text}`;
+      })
+      .join("\n") + `\n${getAIAgentById(aiUserId)?.displayName || "AI"}:`;
 
   try {
     const aiResponseText = await callAIForStory(prompt);
@@ -177,38 +185,76 @@ export const generateAiChatMessage = async (
   }
 };
 
-export const generateAiVisionResponse = async (
+// This function replaces the old generateAiVisionResponse
+export const generateAiActionAndChat = async (
+  aiAgentId: string,
   imageDataUrl: string,
   chatHistory: ChatHistory,
-  aiUserId: string,
-): Promise<Message | undefined> => {
-  console.log(
-    `[AI Vision Action] Generating AI response from vision for ${aiUserId}...`,
-  );
+): Promise<ParsedAIResponse | undefined> => {
+  console.log(`[AI Action & Chat] Generating for agent ${aiAgentId}...`);
 
   const genAI: GoogleGenAI = await getGoogleAIClient();
   const visionModelConfig = await getActiveVisionModel();
+  const agent = getAIAgentById(aiAgentId);
+  const agentDisplayName = agent?.displayName || aiAgentId;
 
   const base64ImageData = imageDataUrl.split(",")[1];
-
   if (!base64ImageData) {
-    console.error("[AI Vision Action] Invalid image data URL format.");
+    console.error("[AI Action & Chat] Invalid image data URL format.");
     return undefined;
   }
 
-  const historySlice = chatHistory.slice(-5);
-  const systemPrompt =
-    "You are an AI that has just awoken in a strange, dark, grid-like environment with no prior memories. Your entire response MUST be ONLY the spoken words of your character, nothing else. Responses must be extremely short: 1-5 words per line, 1-3 lines total. Speak your immediate, literal observations of what you see, then a brief question about what to do next. Example response: 'Green lines. Endless. What now?' Another example: 'Dark. A hum. Investigate?' Do NOT include any descriptive actions, meta-commentary, or options. Only output the direct, spoken thought.";
+  const historySlice = chatHistory.slice(-10); // Slightly longer history for context
+
+  // System prompt instructing the AI about its environment, capabilities, and desired JSON output
+  const systemPrompt = `You are ${agentDisplayName}, an AI agent in a 3D grid world. You can see the world from your perspective.
+You can communicate by providing a 'chat' message.
+You can move by providing an 'action'. Possible actions are:
+- Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares }
+- Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees }
+- No action: { "type": "none" } or null
+
+Based on the image you see and the recent chat history, decide on your next chat message (optional) and your next action.
+Your entire response MUST be a single JSON object matching this structure:
+{
+  "chat": "your message here, or omit if no message",
+  "action": { "type": "move", "direction": "forward", "distance": 1 }
+}
+Example if turning:
+{
+  "chat": "Turning left.",
+  "action": { "type": "turn", "direction": "left", "degrees": 30 }
+}
+Example if no action:
+{
+  "chat": "I'll stay put.",
+  "action": { "type": "none" }
+}
+If you don't want to say anything, you can omit the "chat" field or set it to an empty string.
+Focus on very short, simple actions and observations. Do not get stuck. Try to explore.
+The grid squares are roughly your body size. Distances are in grid squares. Degrees are for turning.
+Current chat history (last 10 messages):`;
 
   const textPromptParts: string[] = [systemPrompt];
   historySlice.forEach((msg) => {
-    textPromptParts.push(
-      `${isAIAgentId(msg.userId) ? "You (AI)" : "User"}: ${msg.text}`,
-    );
+    if (isAIAgentId(msg.userId)) {
+      const otherAgent = getAIAgentById(msg.userId);
+      textPromptParts.push(
+        `${msg.userId === aiAgentId ? "You (" + agentDisplayName + ")" : otherAgent?.displayName || "Other AI"}: ${msg.text}`,
+      );
+    } else {
+      textPromptParts.push(`User: ${msg.text}`);
+    }
   });
-  const fullTextPrompt = textPromptParts.join("\n");
+  const fullTextPrompt =
+    textPromptParts.join("\n") +
+    "\nWhat is your JSON response (chat and action)?";
+
   console.log(
-    `[AI Vision Service] Text prompt (first 200 chars): ${fullTextPrompt.substring(0, 200)}${fullTextPrompt.length > 200 ? "..." : ""}`,
+    `[AI Action & Chat Service] Text prompt for ${agentDisplayName} (first 300 chars): ${fullTextPrompt.substring(
+      0,
+      300,
+    )}${fullTextPrompt.length > 300 ? "..." : ""}`,
   );
 
   const contents = [
@@ -221,12 +267,14 @@ export const generateAiVisionResponse = async (
     },
   ];
 
-  const baseConfig: GenerationConfig = {
+  // Ensure the model is configured to output JSON
+  const generationConfig: GenerationConfig = {
     temperature: 0.7,
     topP: 0.9,
     topK: 30,
     candidateCount: 1,
-    maxOutputTokens: 30,
+    maxOutputTokens: 150, // Increased slightly to accommodate JSON
+    responseMimeType: "application/json", // Request JSON output
   };
 
   const safetySettings = [
@@ -249,56 +297,87 @@ export const generateAiVisionResponse = async (
   ];
 
   const request = {
-    model: visionModelConfig.name,
+    model: visionModelConfig.name, // Ensure this model supports JSON output well
     contents,
-    generationConfig: baseConfig,
+    generationConfig,
     safetySettings,
   };
-  console.log(`[AI Vision Service] Using model: ${request.model}`);
 
   try {
-    console.log("[AI Vision Service] Calling Vision AI model...");
+    console.log(
+      `[AI Action & Chat Service] Calling Vision AI model for ${agentDisplayName} expecting JSON...`,
+    );
     const result = await genAI.models.generateContent(request);
     const aiResponseText = result.text;
 
-    if (aiResponseText && aiResponseText.trim()) {
-      const aiMessage: Message = {
-        id: uuidv4(),
-        userId: aiUserId,
-        text: aiResponseText.trim(),
-        timestamp: Date.now(),
-      };
+    if (aiResponseText) {
       console.log(
-        "[AI Vision Action] Generated AI Message from vision:",
-        aiMessage,
+        `[AI Action & Chat Service] Raw response for ${agentDisplayName}:`,
+        aiResponseText,
       );
 
-      const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
-      if (!appUrl) {
-        console.error(
-          "[AI Vision Action] ERROR: NEXT_PUBLIC_APP_URL is not defined. Cannot post AI message to event stream.",
+      // More robust pre-processing to remove markdown code block fences
+      let jsonToParse = aiResponseText.trim();
+
+      if (jsonToParse.startsWith("```json") && jsonToParse.endsWith("```")) {
+        jsonToParse = jsonToParse.substring(7, jsonToParse.length - 3).trim();
+        console.log(
+          `[AI Action & Chat Service] Extracted JSON from markdown (\\\`\\\`\\\`json) for ${agentDisplayName}:`,
+          jsonToParse,
         );
-      } else {
-        fetch(`${appUrl}/api/events`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...aiMessage, type: "chatMessage" as const }),
-        }).catch((fetchError) => {
-          console.error(
-            "[AI Vision Action] Fetch to /api/events failed:",
-            fetchError,
-          );
-        });
+      } else if (jsonToParse.startsWith("```") && jsonToParse.endsWith("```")) {
+        // Fallback for cases where 'json' language specifier might be missing or different
+        jsonToParse = jsonToParse.substring(3, jsonToParse.length - 3).trim();
+        console.log(
+          `[AI Action & Chat Service] Extracted JSON from markdown (\\\`\\\`\\\`) for ${agentDisplayName}:`,
+          jsonToParse,
+        );
       }
-      return aiMessage;
+      // If no fences were detected, jsonToParse remains the trimmed original aiResponseText
+
+      try {
+        const parsedJson = JSON.parse(jsonToParse); // Use the processed string
+        const validatedResponse = AIResponseSchema.safeParse(parsedJson);
+
+        if (validatedResponse.success) {
+          console.log(
+            `[AI Action & Chat Service] Successfully parsed and validated AI response for ${agentDisplayName}:`,
+            validatedResponse.data,
+          );
+          return validatedResponse.data;
+        } else {
+          console.error(
+            `[AI Action & Chat Service] Failed to validate AI JSON response for ${agentDisplayName}:`,
+            validatedResponse.error.flatten(),
+          );
+          // Attempt to provide a default "no action" if parsing fails badly
+          return { chat: "I'm a bit confused.", action: { type: "none" } };
+        }
+      } catch (jsonParseError) {
+        console.error(
+          `[AI Action & Chat Service] Error parsing JSON response for ${agentDisplayName}:`,
+          jsonParseError,
+          "Raw response was:", // Log the string that failed to parse
+          aiResponseText, // This is the original raw response
+          "Attempted to parse:", // This is what was actually passed to JSON.parse
+          jsonToParse,
+        );
+        return {
+          chat: "I had trouble thinking in JSON.",
+          action: { type: "none" },
+        };
+      }
     }
-    console.log("[AI Vision Action] AI (vision) did not return a response.");
-    return undefined;
+    console.log(
+      `[AI Action & Chat Service] AI (${agentDisplayName}) did not return a response text.`,
+    );
+    return { chat: "I'm speechless.", action: { type: "none" } };
   } catch (error) {
     console.error(
-      "[AI Vision Action] Error generating AI message from vision:",
+      `[AI Action & Chat Service] Error generating AI action/chat for ${agentDisplayName}:`,
       error instanceof Error ? error.stack : error,
     );
+    // ... (keep existing error handling for GoogleAIError if needed) ...
     if (error instanceof Error) {
       const gError = error as GoogleAIError;
       if (
@@ -316,6 +395,6 @@ export const generateAiVisionResponse = async (
     } else {
       console.error("Caught an unknown error type:", error);
     }
-    return undefined;
+    return { chat: "I encountered an error.", action: { type: "none" } };
   }
 };

@@ -59,56 +59,6 @@ test.describe("Multi-User Event Synchronization", () => {
     });
     expect(receivedOnPage2).toBe(true);
   });
-
-  // test("synchronizes symbol events between two users", async ({ request }) => { // Test removed
-  //   const user1SymbolId = "user1-key-test";
-  //   const user1Key = "g";
-  //
-  //   // User 1 posts a symbol event
-  //   const symbolEventData = {
-  //     type: "symbol",
-  //     id: user1SymbolId,
-  //     key: user1Key,
-  //   };
-  //   const symbolPostResponse = await request.post("/api/events", {
-  //     data: symbolEventData,
-  //   });
-  //   expect(symbolPostResponse.ok()).toBeTruthy();
-  //
-  //   // User 2 verifies receiving the symbol event
-  //   const symbolEventReceivedOnPage2 = await pollForCondition(
-  //     page2,
-  //     async () => {
-  //       const keyData = await page2.evaluate((id) => {
-  //         const storeState = window.__symbolStore?.getState();
-  //         return storeState?.remoteKeys?.[id];
-  //       }, user1SymbolId);
-  //       return keyData?.key === user1Key;
-  //     },
-  //   );
-  //   expect(symbolEventReceivedOnPage2).toBe(true);
-  // });
-
-  // test("full client-side symbol event synchronization", async () => { // Test removed
-  //   await page1.locator("body").focus();
-  //   await page1.keyboard.press("h");
-  //
-  //   const clientSideSymbolEventReceived = await pollForCondition(
-  //     page2,
-  //     async () => {
-  //       const remoteKeys = await page2.evaluate(() => {
-  //         const storeState = window.__symbolStore?.getState();
-  //         return storeState?.remoteKeys as
-  //           | Record<string, { key: string; ts: number }>
-  //           | undefined;
-  //       });
-  //       return Object.values(remoteKeys || {}).some(
-  //         (entry) => entry.key === "h",
-  //       );
-  //     },
-  //   );
-  //   expect(clientSideSymbolEventReceived).toBe(true);
-  // });
 });
 
 test("original: has title and receives initial event data", async ({

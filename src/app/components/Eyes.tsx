@@ -6,7 +6,6 @@ import { Group, TextureLoader, ShaderMaterial, Vector3 } from "three";
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { useEyes } from "@/hooks/useEyes";
 import { useEyesStore, ManagedEye } from "@/stores/eyesStore";
-// import { useSymbolStore } from "@/stores/symbolStore"; // Commented out as it's not used now
 
 import { Eye } from "./Eye";
 
@@ -38,7 +37,6 @@ export const Eyes = ({ myId }: { myId: string }) => {
   const refs = useRef<Record<string, Group>>({});
   const eyesData = useEyes();
   const eyeTexture = useLoader(TextureLoader, EYE_TEXTURE_PATH);
-  // const remoteKeys = useSymbolStore((s) => s.remoteKeys); // Commented out as it's not used now
 
   const managedEyes = useEyesStore((s) => s.managedEyes);
   const syncEyes = useEyesStore((s) => s.syncEyes);

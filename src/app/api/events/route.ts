@@ -80,8 +80,6 @@ export const POST = async (req: NextRequest) => {
         validatedEyeData.data.l,
       );
     }
-  } else if (eventData.type === "symbol") {
-    broadcast(eventData);
   } else if (eventData.type === "chatMessage") {
     broadcast(eventData);
   }

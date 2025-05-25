@@ -5,14 +5,6 @@ import { MessageSchema } from "./message";
 export const Vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
 export type Vec3 = z.infer<typeof Vec3Schema>;
 
-export const SymbolEventSchema = z.object({
-  type: z.literal("symbol"),
-  id: z.string(),
-  key: z.string().min(1),
-});
-export type SymbolEventType = z.infer<typeof SymbolEventSchema>;
-
-// This is the schema for an eye update event, used in the discriminated union
 export const EyeUpdateSchema = z.object({
   type: z.literal("eyeUpdate"),
   id: z.string().min(1),
@@ -20,23 +12,19 @@ export const EyeUpdateSchema = z.object({
   l: Vec3Schema.optional(),
   t: z.number(),
 });
-export type EyeUpdateType = z.infer<typeof EyeUpdateSchema>; // This is EventEyeUpdateType
+export type EyeUpdateType = z.infer<typeof EyeUpdateSchema>;
 
-// Schema for chat messages broadcast over EventSource
 export const ChatMessageEventSchema = MessageSchema.extend({
   type: z.literal("chatMessage"),
 });
 export type ChatMessageEventType = z.infer<typeof ChatMessageEventSchema>;
 
-// General Event Schema using the base EyeUpdateSchema
 export const EventSchema = z.discriminatedUnion("type", [
-  SymbolEventSchema,
   EyeUpdateSchema,
   ChatMessageEventSchema,
 ]);
 export type EventType = z.infer<typeof EventSchema>;
 
-// Refined schema for API input validation - not exported from index.ts by default for EventType
 export const ValidatedEyeUpdatePayloadSchema = EyeUpdateSchema.refine(
   (data) => data.p !== undefined || data.l !== undefined,
   {

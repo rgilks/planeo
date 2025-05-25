@@ -22,33 +22,6 @@ test.describe("API Robustness - POST /api/events", () => {
     expect(response.status()).toBe(400);
   });
 
-  test.describe("Symbol Event Validation", () => {
-    test("should return 400 for missing 'id' in symbol event", async ({
-      request,
-    }) => {
-      const response = await request.post(API_ENDPOINT, {
-        data: { type: "symbol", key: "g" },
-      });
-      expect(response.status()).toBe(400);
-    });
-
-    test("should return 400 for missing 'key' in symbol event", async ({
-      request,
-    }) => {
-      const response = await request.post(API_ENDPOINT, {
-        data: { type: "symbol", id: "test" },
-      });
-      expect(response.status()).toBe(400);
-    });
-
-    test("should return 200 for valid symbol event", async ({ request }) => {
-      const response = await request.post(API_ENDPOINT, {
-        data: { type: "symbol", id: "test-valid", key: "g" },
-      });
-      expect(response.ok()).toBeTruthy();
-    });
-  });
-
   test.describe("Eye Update Event Validation", () => {
     test("should return 400 for missing 'id' in eye event", async ({
       request,

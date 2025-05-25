@@ -3,13 +3,11 @@ import { immer } from "zustand/middleware/immer";
 
 import {
   EventSchema,
-  SymbolEventType,
   EyeUpdateType,
   ChatMessageEventType,
 } from "@/domain/event";
 
 // Define listener types
-type SymbolEventListener = (event: SymbolEventType) => void;
 type EyeUpdateEventListener = (event: EyeUpdateType) => void;
 type ChatMessageEventListener = (event: ChatMessageEventType) => void;
 
@@ -25,7 +23,6 @@ interface EventStoreState {
   lastError: string | null;
   eventSourceInstance: EventSource | null;
   listeners: {
-    symbol: SymbolEventListener[];
     eyeUpdate: EyeUpdateEventListener[];
     chatMessage: ChatMessageEventListener[];
   };
@@ -35,7 +32,6 @@ interface EventStoreState {
 interface EventStoreActions {
   connect: () => void;
   disconnect: () => void;
-  subscribeSymbolEvents: (callback: SymbolEventListener) => () => void;
   subscribeEyeUpdates: (callback: EyeUpdateEventListener) => () => void;
   subscribeChatMessageEvents: (
     callback: ChatMessageEventListener,
@@ -50,7 +46,6 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     lastError: null,
     eventSourceInstance: null,
     listeners: {
-      symbol: [],
       eyeUpdate: [],
       chatMessage: [],
     },
@@ -85,19 +80,6 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
           isConnected: false,
         });
       }
-    },
-
-    subscribeSymbolEvents: (callback: SymbolEventListener) => {
-      set((state) => {
-        state.listeners.symbol.push(callback);
-      });
-      return () => {
-        set((state) => {
-          state.listeners.symbol = state.listeners.symbol.filter(
-            (cb: SymbolEventListener) => cb !== callback,
-          );
-        });
-      };
     },
 
     subscribeEyeUpdates: (callback: EyeUpdateEventListener) => {
@@ -153,11 +135,7 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
 
         if (parsedEvent.success) {
           const data = parsedEvent.data;
-          if (data.type === "symbol") {
-            [...get().listeners.symbol].forEach((callback) =>
-              callback(data as SymbolEventType),
-            );
-          } else if (data.type === "eyeUpdate") {
+          if (data.type === "eyeUpdate") {
             if (get().listeners.eyeUpdate.length === 0) {
               console.log("Caching eyeUpdate event, no listeners yet:", data);
               set((state) => {

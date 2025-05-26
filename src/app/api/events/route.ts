@@ -94,9 +94,17 @@ export const POST = async (req: NextRequest) => {
   try {
     payload = await req.json();
     // Log the received payload for POST requests on a single line
+    const payloadForLogging = { ...payload };
+    if (
+      payloadForLogging.type === "aiVision" &&
+      payloadForLogging.imageDataUrl
+    ) {
+      payloadForLogging.imageDataUrl = "[imageDataUrl removed for brevity]";
+    }
+
     console.log(
       "POST /api/events - Received payload:",
-      JSON.stringify(payload),
+      JSON.stringify(payloadForLogging),
     );
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));

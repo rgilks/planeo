@@ -23,7 +23,7 @@ export const Eye = ({ eye, rigidBodyRef }: EyeProps) => {
       position={eye.position}
     >
       <BallCollider args={[EYE_RADIUS]} />
-      <mesh rotation={[0, 0, 0]}>
+      <mesh rotation={[0, Math.PI, 0]}>
         <sphereGeometry args={[EYE_RADIUS, 32, 32]} />
         <primitive object={eye.material} attach="material" />
       </mesh>

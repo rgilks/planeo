@@ -12,9 +12,9 @@
 
 - **3D Environment:** Interactive 3D space built with React Three Fiber.
 - **Real-time Multi-user Interaction:** See other users' movements (represented as eyeballs) in real-time using Server-Sent Events (SSE).
-- **AI Agents:** Two AI agents ("AI-1" and "AI-2") are present by default, each with a unique eyeball and chat identity. Their number and properties can be configured via the `AI_AGENTS_CONFIG` environment variable. They can generate chat messages and respond to visual stimuli, with actions broadcast in real-time. AI agent views update visually at ~10 FPS, while their decision-making (LLM invocation) rate is controlled to optimize performance and cost. ([Details](/docs/ai-agents.md), [Vision Details](/docs/ai-agent-vision.md))
+- **AI Agents with Synchronized Actions & Speech:** Two AI agents ("AI-1" and "AI-2") are present by default. They generate chat messages and actions (like moving or turning) based on visual stimuli. Their actions are performed on the client, and the associated chat message's audio is played. The next AI decision cycle for an agent is triggered only after its current audio playback completes, ensuring a synchronized and more natural interaction flow. AI agent views update visually at ~10 FPS. ([Details](/docs/ai-agents.md), [Vision Details](/docs/ai-agent-vision.md), [New Interaction Flow](/docs/ai-interaction-flow.md))
 - **Chat Functionality:** View messages from AI agents in a shared chat window. ([Details](/docs/chat.md))
-- **Text-to-Speech (TTS):** Chat messages from AI agents are spoken aloud with a distinct voice for each agent. ([Details](/docs/text-to-speech.md))
+- **Text-to-Speech (TTS):** Chat messages from AI agents are spoken aloud. The system now uses a test audio track for this feature during development. ([Details](/docs/text-to-speech.md))
 - **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
 
 ## Simulation Start
@@ -43,6 +43,7 @@ More detailed technical documentation for various aspects of the project can be 
 
 ## Recent Developments
 
+- **New AI Interaction Flow with Audio Synchronization (Recent Major Change):** The core AI agent interaction loop has been refactored. The Language Model (LLM) now returns both a chat message and an action. The backend generates an audio source for the chat message. On the client-side, an orchestrator component manages performing the AI's action and then playing the generated audio. Crucially, the next request to the LLM for that agent is only made after the audio playback for its current message has completed. This ensures actions and speech are synchronized and prevents rapid, out-of-sync requests. ([Details](/docs/ai-interaction-flow.md))
 - **Enhanced Physics: Physical Eyes & Wider Cube Spread (2025-07-29):** The physics simulation has been updated. User eyeballs are now physical objects (`kinematicPosition` `RigidBody`) that can interact with and push the falling cubes. The initial scattering area for the cubes has also been quadrupled. See `docs/physics.md` for more details.
 - **Configurable AI Agents via Environment Variable (Relevant Recent Change):** AI agent system now supports a variable number of agents defined via the `AI_AGENTS_CONFIG` environment variable. ([Details](/docs/ai-agents.md))
 - **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes.

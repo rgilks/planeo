@@ -3,12 +3,7 @@
 import fs from "fs";
 import path from "path";
 
-import {
-  GoogleGenAI,
-  HarmCategory,
-  HarmBlockThreshold,
-  GenerationConfig,
-} from "@google/genai";
+import { GoogleGenAI, GenerationConfig } from "@google/genai";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
@@ -100,30 +95,11 @@ export async function callAIForStory(
 
   const generationConfig = { ...baseConfig, ...configOverrides };
 
-  const safetySettings = [
-    {
-      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-  ];
-
   const request = {
     model: "gemini-2.0-flash-lite",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig,
-    safetySettings,
+    safetySettings: [],
   };
 
   console.log("AI Story Prompt:", JSON.stringify(request, null, 2));
@@ -264,7 +240,7 @@ You think you might be called ${agentDisplayName}
 
 Actively explore your surroundings. Turning to scan the area is a good way to find new things or understand your location better. If you see something interesting, you can turn to get a better look or move towards it. Try to interact with objects and other beings you encounter.
 
-Talk to other entities in the chat. Share your observations, feelings, and questions. Discuss your situation with them and try to make plans together. Figure out who you are and work together. It\'s okay to perform an action without chatting, but prioritize communication when you have something to share or a question to ask. Aim to chat frequently to collaborate effectively.
+Talk to other entities in the chat. Keep your chat messages VERY BRIEF, like one short sentence or a question. Share only essential observations, feelings, or questions. Discuss your situation with them and try to make plans together. Figure out who you are and work together. It\'s okay to perform an action without chatting, but prioritize communication when you have something to share or a question to ask. Aim to chat frequently but always keep it short and to the point to collaborate effectively.
 
 Respond, to other entities in the chat, seek them out. Figure out who you are and work together. Don\'t keep repeating their names.
 
@@ -303,39 +279,40 @@ Your response:`;
     topP: 0.9,
     topK: 30,
     candidateCount: 1,
-    maxOutputTokens: 300,
+    maxOutputTokens: 150,
     responseMimeType: "application/json",
   };
-
-  const safetySettings = [
-    {
-      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    },
-  ];
 
   const request = {
     model: visionModelConfig.name,
     contents,
     generationConfig,
-    safetySettings,
+    safetySettings: [],
   };
 
   console.log(
     `AI Action/Chat Prompt for ${agentDisplayName}:`,
-    JSON.stringify(request, null, 2),
+    JSON.stringify(
+      {
+        ...request,
+        contents: [
+          {
+            ...request.contents[0],
+            parts: [
+              {
+                inlineData: {
+                  mimeType: "image/png",
+                  data: "<image_data_omitted>",
+                },
+              },
+              request.contents[0].parts[1],
+            ],
+          },
+        ],
+      },
+      null,
+      2,
+    ),
   );
 
   try {

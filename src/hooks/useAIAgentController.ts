@@ -175,6 +175,7 @@ export const useAIAgentController = (myId: string) => {
           agentId,
           imageDataUrl,
           chatHistory,
+          [],
         );
 
         if (movementAction && movementAction.type !== "none") {

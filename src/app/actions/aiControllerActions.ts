@@ -1,6 +1,10 @@
 "use server";
 
-import { generateAiActionAndChat, type ChatHistory } from "./generateMessage";
+import {
+  generateAiActionAndChat,
+  type ChatHistory,
+  type ActionHistory,
+} from "./generateMessage";
 
 import type { ParsedAIResponse } from "@/domain/aiAction";
 
@@ -13,6 +17,7 @@ export const requestAiDecision = async (
   aiAgentId: string,
   imageDataUrl: string,
   chatHistory: ChatHistory,
+  actionHistory: ActionHistory,
 ): Promise<ParsedAIResponse["action"]> => {
   console.log(
     `[AI Controller Action] Requesting decision for agent ${aiAgentId}`,
@@ -22,6 +27,7 @@ export const requestAiDecision = async (
     aiAgentId,
     imageDataUrl,
     chatHistory,
+    actionHistory,
   );
 
   if (decision) {

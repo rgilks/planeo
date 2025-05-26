@@ -188,15 +188,22 @@ export const generateAiChatMessage = async (
   }
 };
 
+// Define types for action history
+export type AgentAction = ParsedAIResponse["action"];
+export type ActionHistory = AgentAction[];
+
 // This function replaces the old generateAiVisionResponse
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
   chatHistory: ChatHistory,
+  actionHistory: ActionHistory,
 ): Promise<ParsedAIResponse | undefined> => {
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
-  console.log(`AI Action/Chat: Generating for ${agentDisplayName}`);
+  console.log(
+    `AI Action/Chat: Generating for ${agentDisplayName} with action history length ${actionHistory.length}`,
+  );
 
   const genAI: GoogleGenAI = await getGoogleAIClient();
   const visionModelConfig = await getActiveVisionModel();
@@ -231,9 +238,29 @@ export const generateAiActionAndChat = async (
 
   const historySlice = chatHistory;
 
-  const systemPrompt = `You have no memories and feel lost, disoriented and scared.
+  const formatActionForPrompt = (action: AgentAction): string => {
+    if (!action) {
+      return "- An unknown previous action."; // Should ideally not happen if history is clean
+    }
+    switch (action.type) {
+      case "none":
+        return "- Previously, you chose to pause and observe.";
+      case "move":
+        return `- Previously, you moved ${action.direction} ${action.distance} grid square(s).`;
+      case "turn":
+        return `- Previously, you turned ${action.direction} ${action.degrees} degrees.`;
+      default:
+        // This handles any unexpected action types if the schema were to change
+        // or if a non-validated action somehow made it into the history.
+        return `- Previously, you performed an uncharacterised action: ${JSON.stringify(action)}`;
+    }
+  };
 
-This is what you have heard since getting here: 
+  const systemPrompt = `You awaken with no prior memories of who you are or how you got here. You feel lost, disoriented, and scared. You are now trying to make sense of your surroundings and remember what you've done recently.
+
+You are provided with an image of your current view.
+
+This is what has been said by you and others:
 Chat History (SenderName: MessageText):
 ${historySlice
   .map((msg) => {
@@ -246,15 +273,16 @@ ${historySlice
   })
   .join("\\\\\\\\n")}
 
-You think you might be called ${agentDisplayName}
+This is a log of YOUR recent actions:
+${actionHistory.length > 0 ? actionHistory.map(formatActionForPrompt).join("\\\\\\\\n") : "You haven't taken any specific actions yet."}
 
-You are provided with an image of your current view.
+You think you might be called ${agentDisplayName}
 
 If you see interesting things stop turning and move towards them try bumping into them
 
 Share your observations, feelings, and questions in brief chat messages.
 
-Respond, to other entities in the chat, seek them out. Figure out who you are and work together.
+Respond, to other entities in the chat, seek them out. Figure out who you are and work together. Don't keep repeating their names.
 
 Output Format: Respond with a single JSON object adhering to this structure:
 \\\`\\\`\\\`json
@@ -291,7 +319,7 @@ Your response:`;
     topP: 0.9,
     topK: 30,
     candidateCount: 1,
-    maxOutputTokens: 250,
+    maxOutputTokens: 300,
     responseMimeType: "application/json",
   };
 

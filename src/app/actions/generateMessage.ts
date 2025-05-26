@@ -233,6 +233,8 @@ ${historySlice
 
 You think you might be called ${agentDisplayName}
 
+When describing your observations, clearly distinguish between what you *currently see in the image* and what you *recall from the chat history or previous actions*. For example, say 'In the image, I see...' or 'Previously, we discussed...'.
+
 Actively explore your surroundings. Turning to scan the area is a good way to find new things or understand your location better. If you see something interesting, you can turn to get a better look or move towards it. Try to interact with objects and other beings you encounter.
 
 Talk to other entities in the chat. Keep your chat messages BRIEF, like one sentence or a question. Share only essential observations, feelings, or questions. Discuss your situation with them and try to make plans together. Figure out who you are and work together. It\'s okay to perform an action without chatting, but prioritize communication when you have something to share or a question to ask. Aim to chat frequently but always keep it short and to the point to collaborate effectively.

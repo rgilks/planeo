@@ -42,3 +42,10 @@ The following features are planned for future development:
 - **Keyboard-Only Look Controls (2025-05-25):** Player look (camera orientation) is now controlled exclusively by keyboard. A/D keys or Left/Right arrow keys rotate the view left/right (yaw). Mouse look has been disabled. W/S or Up/Down arrow keys move forward/backward relative to the current view direction.
 - **Arrow Key Navigation (2025-05-25):** Users can now move their viewpoint (eye) around the plane using the arrow keys (up, down, left, right) in addition to WASD controls. These movements are broadcast to other connected users in real-time.
 - **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes. More details can be found in `docs/rendering_issues.md`.
+
+## Environment Variables
+
+- `REPLICATE_API_TOKEN`: Your Replicate API token.
+- `TOTAL_AGENTS`: The maximum number of agents allowed in the environment (e.g., 10).
+
+### Environment Variables for Production

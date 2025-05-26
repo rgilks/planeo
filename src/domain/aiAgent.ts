@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { env } from "@/lib/env"; // Assuming this path is correct
+
 export const AIAgentSchema = z.object({
   id: z.string(), // Using non-UUID strings for easier reference, e.g., "ai-iris"
   displayName: z.string(),
@@ -23,9 +25,12 @@ export const getAIAgents = (): AIAgent[] => {
 
   const configJson = process.env["AI_AGENTS_CONFIG"];
   if (!configJson) {
-    console.warn(
-      "[AI Agents] AI_AGENTS_CONFIG environment variable is not set. Using default AI agents.",
-    );
+    // Only log default agent usage if TOTAL_AGENTS > 0
+    if (env.TOTAL_AGENTS > 0) {
+      console.warn(
+        "[AI Agents] AI_AGENTS_CONFIG environment variable is not set. Using default AI agents.",
+      );
+    }
     parsedAIAgents = defaultAIAgents;
     return parsedAIAgents;
   }
@@ -36,9 +41,12 @@ export const getAIAgents = (): AIAgent[] => {
     if (result.success && result.data.length > 0) {
       // Ensure data is not empty
       parsedAIAgents = result.data;
-      console.log(
-        `[AI Agents] Successfully loaded ${result.data.length} AI agents from AI_AGENTS_CONFIG.`,
-      );
+      // Log only if agents will actually be used based on TOTAL_AGENTS
+      if (env.TOTAL_AGENTS > 0) {
+        console.log(
+          `[AI Agents] Successfully loaded ${result.data.length} AI agents from AI_AGENTS_CONFIG. Effective number of agents will be limited by TOTAL_AGENTS (${env.TOTAL_AGENTS}).`,
+        );
+      }
       return result.data;
     } else {
       if (!result.success) {
@@ -47,15 +55,24 @@ export const getAIAgents = (): AIAgent[] => {
           result.error.flatten(),
         );
       } else {
-        console.warn(
-          "[AI Agents] AI_AGENTS_CONFIG was empty or invalid. Using default AI agents.",
-        );
+        // Only log default agent usage if TOTAL_AGENTS > 0
+        if (env.TOTAL_AGENTS > 0) {
+          console.warn(
+            "[AI Agents] AI_AGENTS_CONFIG was empty or invalid. Using default AI agents.",
+          );
+        }
       }
       parsedAIAgents = defaultAIAgents;
       return parsedAIAgents;
     }
   } catch (error) {
     console.error("[AI Agents] Invalid JSON in AI_AGENTS_CONFIG:", error);
+    // Only log default agent usage if TOTAL_AGENTS > 0
+    if (env.TOTAL_AGENTS > 0) {
+      console.warn(
+        "[AI Agents] Error processing AI_AGENTS_CONFIG. Using default AI agents.",
+      );
+    }
     parsedAIAgents = defaultAIAgents;
     return parsedAIAgents;
   }

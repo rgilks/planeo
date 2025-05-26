@@ -4,6 +4,7 @@ import { EventSchema } from "@/domain";
 import { getAIAgents } from "@/domain/aiAgent";
 import { ValidatedEyeUpdatePayloadSchema } from "@/domain/event";
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
+import { env } from "@/lib/env";
 
 import { broadcast, setEye, subscribe, unsubscribe, getEyes } from "./sseStore";
 
@@ -13,7 +14,31 @@ export const GET = async () => {
   const agents = getAIAgents();
   let agentEyesInitialized = false;
 
-  agents.forEach((agent, index) => {
+  // Filter agents to respect TOTAL_AGENTS limit
+  const agentsToInitialize = agents.slice(0, env.TOTAL_AGENTS);
+
+  if (
+    env.TOTAL_AGENTS > 0 &&
+    agentsToInitialize.length === 0 &&
+    !process.env["AI_AGENTS_CONFIG"]
+  ) {
+    console.warn(
+      `[API Events] TOTAL_AGENTS is ${env.TOTAL_AGENTS}, but AI_AGENTS_CONFIG is not set or is empty. No AI agents will be initialized from defaults if TOTAL_AGENTS was intended to use them.`,
+    );
+  } else if (
+    agentsToInitialize.length > 0 &&
+    !process.env["AI_AGENTS_CONFIG"]
+  ) {
+    console.log(
+      `[API Events] AI_AGENTS_CONFIG not set. Initializing ${agentsToInitialize.length} default AI agent(s) (TOTAL_AGENTS limit: ${env.TOTAL_AGENTS}).`,
+    );
+  } else if (agentsToInitialize.length > 0 && process.env["AI_AGENTS_CONFIG"]) {
+    console.log(
+      `[API Events] Initializing ${agentsToInitialize.length} AI agent(s) from AI_AGENTS_CONFIG (TOTAL_AGENTS limit: ${env.TOTAL_AGENTS}).`,
+    );
+  }
+
+  agentsToInitialize.forEach((agent, index) => {
     if (!currentEyes.get(agent.id)) {
       const xPosition = 20 * (index + 1) * (index % 2 === 0 ? 1 : -1); // Spread them out
       setEye(
@@ -26,7 +51,9 @@ export const GET = async () => {
   });
 
   if (agentEyesInitialized) {
-    console.log("[API Events] Initialized default AI agent eye positions.");
+    console.log(
+      `[API Events] Successfully set initial eye positions for ${agentsToInitialize.length} AI agent(s).`,
+    );
     // Broadcast an empty eyeUpdate to trigger clients to fetch all eyes including new AI agents
     // Or, more robustly, have clients fetch all on connect.
     // For now, let's rely on the fact that new connection will get all current eyes.

@@ -1,12 +1,10 @@
-import { z } from "zod";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import { EyeUpdateType, Vec3Schema } from "@/domain/event";
+import { type Vec3 } from "@/domain";
+import { EyeUpdateType } from "@/domain/event";
 
-type Vec3 = z.infer<typeof Vec3Schema>;
-
-interface eyeStoreState {
+export interface EyeState {
   eyes: Record<string, { p?: Vec3; l?: Vec3; t: number }>;
 }
 
@@ -22,7 +20,7 @@ declare global {
   }
 }
 
-export const useEyeStore = create<eyeStoreState & EyeStoreActions>()(
+export const useEyeStore = create<EyeState & EyeStoreActions>()(
   immer((set) => ({
     eyes: {},
     setEye: (eyeUpdate) =>

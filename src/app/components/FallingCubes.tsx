@@ -2,52 +2,38 @@
 
 import { Box } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import React, { useMemo } from "react";
+import React from "react";
 import * as THREE from "three";
 
 import { GROUND_Y_POSITION } from "@/domain/sceneConstants";
+import { useBoxStore, type BoxState } from "@/stores/boxStore";
 
-const CUBE_COUNT = 25;
+export const ServerDrivenBoxes = () => {
+  const boxesMap = useBoxStore(
+    (state: { boxes: Map<string, BoxState> }) => state.boxes,
+  );
+  const serverBoxes: BoxState[] = Array.from(boxesMap.values());
 
-interface CubeProps {
-  position: [number, number, number];
-  size: [number, number, number];
-  color: THREE.ColorRepresentation;
-}
-
-const Cube = ({ position, size, color }: CubeProps) => (
-  <RigidBody position={position} colliders="cuboid">
-    <Box args={size}>
-      <meshStandardMaterial color={color} />
-    </Box>
-  </RigidBody>
-);
-
-export const FallingCubes = () => {
-  const cubes = useMemo(() => {
-    const tempCubes: CubeProps[] = [];
-    for (let i = 0; i < CUBE_COUNT; i++) {
-      tempCubes.push({
-        position: [
-          (Math.random() - 0.5) * 80, // Spread around origin X
-          GROUND_Y_POSITION + Math.random() * 10 + 10, // Start above the ground
-          (Math.random() - 0.5) * 80, // Spread around origin Z
-        ],
-        size: [
-          Math.random() * 2 + 15, // Size relative to eye radius (8 * 2 = 16)
-          Math.random() * 2 + 15, // Size relative to eye radius (8 * 2 = 16)
-          Math.random() * 2 + 15, // Size relative to eye radius (8 * 2 = 16)
-        ],
-        color: new THREE.Color(Math.random(), Math.random(), Math.random()),
-      });
-    }
-    return tempCubes;
-  }, []);
+  console.log(
+    "[Client ServerDrivenBoxes] Rendering from boxesMap. Size:",
+    boxesMap.size,
+    "Array for render:",
+    serverBoxes,
+  );
 
   return (
     <>
-      {cubes.map((cube, index) => (
-        <Cube key={index} {...cube} />
+      {serverBoxes.map((box: BoxState) => (
+        <RigidBody
+          key={box.id}
+          position={box.p}
+          rotation={box.o}
+          colliders="cuboid"
+        >
+          <Box args={[15, 15, 15]}>
+            <meshStandardMaterial color={new THREE.Color(box.c)} />
+          </Box>
+        </RigidBody>
       ))}
       {/* Ground Plane */}
       <RigidBody type="fixed" colliders="cuboid">

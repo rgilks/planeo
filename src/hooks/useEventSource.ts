@@ -1,6 +1,8 @@
 "use client";
 import { useEffect } from "react";
 
+import { type BoxEventType } from "@/domain";
+import { useBoxStore } from "@/stores/boxStore";
 import { useEventStore } from "@/stores/eventStore";
 import { useMessageStore } from "@/stores/messageStore";
 
@@ -11,9 +13,11 @@ export const useEventSource = (myId: React.RefObject<string>) => {
   const subscribeToChatMessageEvents = useEventStore(
     (s) => s.subscribeChatMessageEvents,
   );
+  const subscribeToBoxEvents = useEventStore((s) => s.subscribeBoxEvents);
   const eventSourceConnected = useEventStore((s) => s.isConnected);
 
   const addMessage = useMessageStore((s) => s.addMessage);
+  const handleBoxEventFromStore = useBoxStore((s) => s.handleBoxEvent);
 
   useEffect(() => {
     // Attempt to connect to the EventSource when the hook mounts
@@ -40,4 +44,13 @@ export const useEventSource = (myId: React.RefObject<string>) => {
     );
     return () => unsubscribeChat();
   }, [subscribeToChatMessageEvents, addMessage, myId]);
+
+  useEffect(() => {
+    const handleBoxEvent = (event: BoxEventType) => {
+      handleBoxEventFromStore(event);
+    };
+
+    const unsubscribeBox = subscribeToBoxEvents(handleBoxEvent);
+    return () => unsubscribeBox();
+  }, [subscribeToBoxEvents, handleBoxEventFromStore]);
 };

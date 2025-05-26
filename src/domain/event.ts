@@ -1,9 +1,8 @@
 import { z } from "zod";
 
+import { BoxEventSchema, BoxUpdatePayloadSchema } from "./box";
+import { Vec3Schema } from "./common";
 import { MessageSchema } from "./message";
-
-export const Vec3Schema = z.tuple([z.number(), z.number(), z.number()]);
-export type Vec3 = z.infer<typeof Vec3Schema>;
 
 export const EyeUpdateSchema = z.object({
   type: z.literal("eyeUpdate"),
@@ -32,6 +31,8 @@ export const EventSchema = z.discriminatedUnion("type", [
   EyeUpdateSchema,
   ChatMessageEventSchema,
   AiVisionEventSchema,
+  BoxEventSchema,
+  BoxUpdatePayloadSchema,
 ]);
 export type EventType = z.infer<typeof EventSchema>;
 

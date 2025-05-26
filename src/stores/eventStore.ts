@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+import { type BoxEventType } from "@/domain";
 import {
   EventSchema,
   EyeUpdateType,
@@ -12,6 +13,7 @@ import { useEyeStore } from "./eyeStore"; // Import the singular eyeStore
 // Define listener types
 type EyeUpdateEventListener = (event: EyeUpdateType) => void;
 type ChatMessageEventListener = (event: ChatMessageEventType) => void;
+type BoxEventListener = (event: BoxEventType) => void; // Added BoxEventListener
 
 // Augment the Window interface for the debug store
 declare global {
@@ -27,6 +29,7 @@ interface EventStoreState {
   listeners: {
     eyeUpdate: EyeUpdateEventListener[];
     chatMessage: ChatMessageEventListener[];
+    box: BoxEventListener[]; // Added for box events
   };
   cachedEyeUpdates: EyeUpdateType[];
   eyes: EyeUpdateType[];
@@ -39,6 +42,7 @@ interface EventStoreActions {
   subscribeChatMessageEvents: (
     callback: ChatMessageEventListener,
   ) => () => void;
+  subscribeBoxEvents: (callback: BoxEventListener) => () => void; // Added subscribeBoxEvents
   _handleMessage: (event: MessageEvent) => void;
   _handleError: (event: Event) => void;
 }
@@ -51,6 +55,7 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     listeners: {
       eyeUpdate: [],
       chatMessage: [],
+      box: [], // Initialize box listeners
     },
     cachedEyeUpdates: [],
     eyes: [],
@@ -132,6 +137,22 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       };
     },
 
+    subscribeBoxEvents: (callback: BoxEventListener) => {
+      // Implemented subscribeBoxEvents
+      set((state) => {
+        state.listeners.box.push(callback);
+      });
+      // Optionally, if you had caching for box events like for eyes, dispatch them here.
+      // For now, new subscribers will just get future events.
+      return () => {
+        set((state) => {
+          state.listeners.box = state.listeners.box.filter(
+            (cb) => cb !== callback,
+          );
+        });
+      };
+    },
+
     _handleMessage: (event: MessageEvent) => {
       try {
         const rawData = JSON.parse(event.data);
@@ -169,6 +190,16 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
             [...get().listeners.chatMessage].forEach((callback) =>
               callback(data as ChatMessageEventType),
             );
+          } else if (data.type === "box") {
+            // Added case for "box"
+            // console.log("[EventStore] Received 'box' event:", data);
+            const boxEvent = data as BoxEventType;
+            // Directly call the boxStore handler if desired, or use listeners
+            // For consistency with other events, using listeners:
+            [...get().listeners.box].forEach((callback) => callback(boxEvent));
+
+            // Alternative: Directly update useBoxStore if only one consumer
+            // useBoxStore.getState().handleBoxEvent(boxEvent);
           }
         } else {
           console.error(

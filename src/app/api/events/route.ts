@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { EventSchema } from "@/domain";
+import { EventSchema, ValidatedBoxUpdatePayloadSchema } from "@/domain";
 import { getAIAgents } from "@/domain/aiAgent";
 import { ValidatedEyeUpdatePayloadSchema } from "@/domain/event";
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { env } from "@/lib/env";
 
-import { broadcast, setEye, subscribe, unsubscribe, getEyes } from "./sseStore";
+import {
+  broadcast,
+  setEye,
+  subscribe,
+  unsubscribe,
+  getEyes,
+  setBox,
+} from "./sseStore";
 
 export const GET = async () => {
   // Initialize AI Agent positions if not already done
@@ -151,6 +158,29 @@ export const POST = async (req: NextRequest) => {
     }
   } else if (eventData.type === "chatMessage") {
     broadcast(eventData); // Broadcast all chat messages
+  } else if (eventData.type === "boxUpdate") {
+    const validatedBoxData =
+      ValidatedBoxUpdatePayloadSchema.safeParse(eventData);
+
+    if (!validatedBoxData.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid boxUpdate payload",
+          details: validatedBoxData.error.flatten(),
+        },
+        { status: 400 },
+      );
+    }
+    // We expect clients to send "boxUpdate" type, but setBox in sseStore works with the "box" event type for storage/broadcast.
+    // The setBox function will construct the full BoxEventType with a new timestamp.
+    if (validatedBoxData.data.p || validatedBoxData.data.o) {
+      setBox(
+        validatedBoxData.data.id,
+        validatedBoxData.data.p,
+        validatedBoxData.data.o,
+      );
+      // sseStore.setBox now handles broadcasting the BoxEventType
+    }
   }
 
   return NextResponse.json({ ok: true });

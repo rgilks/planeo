@@ -29,6 +29,17 @@ The following features are planned for future development:
 - **Authentication:** User authentication via NextAuth.
 - **Database Integration:** Utilizing a local SQLite database via better-sqlite3 for persistent data storage.
 
+## Technical Documentation
+
+More detailed technical documentation for various aspects of the project can be found in the `docs/` folder:
+
+- `docs/ai-agents.md`: Details on AI agent behavior, configuration, and capabilities.
+- `docs/ai_services.md`: Information on external AI services integrated or planned.
+- `docs/physics.md`: Explanation of the physics simulation for objects in the 3D scene.
+- `docs/real-time-camera-movement.md`: Covers how camera/user movements are handled and synchronized.
+- `docs/sse-event-handling.md`: Describes the Server-Sent Events (SSE) mechanism for real-time updates, including synchronization of box (cube) states like color and position.
+- `docs/text-to-speech.md`: Information on the text-to-speech functionality for chat messages.
+
 ## Recent Developments
 
 - **AI Gaze Direction (2025-05-25):** AI agents will now attempt to look at the user (or other AI) they are addressing in chat. This enhances the sense of interaction by directing their "gaze" towards their interlocutor. The AI's system prompt has been updated to encourage this behavior, using the `lookAt` action with the target's ID from chat history. More details in `docs/ai_services.md` and `docs/ai-agents.md`.

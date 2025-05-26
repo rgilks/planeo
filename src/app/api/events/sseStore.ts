@@ -1,11 +1,72 @@
-import { EventEyeUpdateType, EventType, type Vec3 } from "@/domain";
+import {
+  EventEyeUpdateType,
+  EventType,
+  type Vec3,
+  BoxEventType,
+} from "@/domain";
 import { getAIAgents } from "@/domain/aiAgent";
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
+import { env } from "@/lib/env"; // Standard import for env
 
 type Writer = { write: (data: string) => void; closed: boolean };
 
 const eyes = new Map<string, EventEyeUpdateType>();
+const boxes = new Map<string, BoxEventType>();
 const subs = new Set<Writer>();
+
+let boxesInitialized = false; // Flag to ensure one-time initialization
+
+// Define a list of distinct colors for the boxes - Updated for 80s video game style
+const BOX_COLORS = [
+  "#FF0000",
+  "#00FF00",
+  "#0000FF",
+  "#FFFF00",
+  "#FF00FF",
+  "#00FFFF",
+  "#FFA500",
+  "#FF69B4",
+  "#39FF14",
+  "#7D05EF",
+  "#FDFD33",
+  "#FF7F00",
+];
+
+// Function to initialize boxes
+const initializeBoxes = () => {
+  if (boxesInitialized || env.NUMBER_OF_BOXES === 0) {
+    if (boxesInitialized) console.log("[SSE Store] Boxes already initialized.");
+    return;
+  }
+
+  console.log(
+    `[SSE Store] Initializing ${env.NUMBER_OF_BOXES} boxes (NUMBER_OF_BOXES: ${env.NUMBER_OF_BOXES}).`,
+  );
+  for (let i = 0; i < env.NUMBER_OF_BOXES; i++) {
+    const boxId = `box_${i + 1}`;
+    const position: Vec3 = [i * 15 - (env.NUMBER_OF_BOXES - 1) * 7.5, 5, -20];
+    const orientation: Vec3 = [0, 0, 0];
+    const color = BOX_COLORS[i % BOX_COLORS.length];
+
+    const boxData: BoxEventType = {
+      type: "box",
+      id: boxId,
+      p: position,
+      o: orientation,
+      c: color,
+      t: Date.now(),
+    };
+    boxes.set(boxId, boxData);
+    console.log(`[SSE Store] Initialized box: ${JSON.stringify(boxData)}`);
+  }
+  console.log(
+    `[SSE Store] Successfully initialized ${boxes.size} of ${env.NUMBER_OF_BOXES} boxes.`,
+  );
+  boxesInitialized = true;
+};
+
+// Call initializeBoxes when the module is loaded.
+initializeBoxes();
 
 export const setEye = (
   id: string,
@@ -58,8 +119,66 @@ export const getEyes = (): Map<string, EventEyeUpdateType> => {
   return eyes;
 };
 
+// New function to set box state
+export const setBox = (
+  id: string,
+  p: Vec3 | undefined,
+  o: Vec3 | undefined,
+): void => {
+  console.log(
+    `[SSE Store] setBox called for id: ${id}, p: ${JSON.stringify(p)}, o: ${JSON.stringify(o)}`,
+  );
+  const existingBox = boxes.get(id);
+  const now = Date.now();
+
+  let newP = p;
+  let newO = o;
+
+  if (newP === undefined && existingBox?.p) {
+    newP = existingBox.p;
+  }
+  if (newO === undefined && existingBox?.o) {
+    newO = existingBox.o;
+  }
+
+  if (newP === undefined || newO === undefined || !existingBox?.c) {
+    console.warn(
+      `setBox called for id ${id} without full position/orientation data or missing initial color. Current P: ${newP}, Current O: ${newO}, Existing Color: ${existingBox?.c}. Ignoring.`,
+    );
+    return;
+  }
+
+  const msg: BoxEventType = {
+    type: "box",
+    id,
+    p: newP,
+    o: newO,
+    c: existingBox.c,
+    t: now,
+  };
+
+  boxes.set(id, msg);
+  console.log(`[SSE Store] Box ${id} updated. State: ${JSON.stringify(msg)}`);
+  broadcast(msg);
+};
+
+// New function to get all boxes
+export const getBoxes = (): Map<string, BoxEventType> => {
+  return boxes;
+};
+
 export const broadcast = (msg: EventType): void => {
+  if (!msg) {
+    console.warn(
+      "[SSE Store] Broadcast called with null or undefined message. Skipping.",
+    );
+    return;
+  }
+  console.log(
+    `[SSE Store] Broadcasting event type: ${msg.type}, id: ${"id" in msg ? msg.id : "N/A"}`,
+  );
   const data = `data:${JSON.stringify(msg)}\n\n`;
+  let activeSubs = 0;
   for (const w of subs) {
     if (w.closed) {
       subs.delete(w);
@@ -67,6 +186,7 @@ export const broadcast = (msg: EventType): void => {
     }
     try {
       w.write(data);
+      activeSubs++;
     } catch (error) {
       console.error(
         `Failed to write to SSE subscriber for event type ${msg?.type ?? "unknown"}. Removing subscriber.`,
@@ -75,13 +195,30 @@ export const broadcast = (msg: EventType): void => {
       subs.delete(w);
     }
   }
+  console.log(`[SSE Store] Broadcasted to ${activeSubs} active subscribers.`);
 };
 
 export const subscribe = (w: Writer): void => {
+  // Ensure boxes are initialized before subscribing a client
+  if (!boxesInitialized) {
+    console.log(
+      "[SSE Store] Boxes not yet initialized during subscribe. Initializing now.",
+    );
+    initializeBoxes(); // Ensure initialization if it hasn't run
+  }
+
   subs.add(w);
+  console.log("[SSE Store] New subscriber. Total subscribers:", subs.size);
+  console.log("[SSE Store] Sending initial states to new subscriber...");
+
+  // Send all current eye states
+  let eyesSent = 0;
   for (const eye of eyes.values()) {
     try {
-      w.write(`data:${JSON.stringify(eye)}\n\n`);
+      const eyeDataString = `data:${JSON.stringify(eye)}\n\n`;
+      // console.log(`[SSE Store] Sending eye data to new subscriber: ${eyeDataString.trim()}`);
+      w.write(eyeDataString);
+      eyesSent++;
     } catch (error) {
       console.error(
         `Failed to write initial eye data to SSE subscriber. Removing subscriber.`,
@@ -91,6 +228,35 @@ export const subscribe = (w: Writer): void => {
       break;
     }
   }
+  console.log(
+    `[SSE Store] Sent ${eyesSent} initial eye states to new subscriber.`,
+  );
+
+  // Send all current box states
+  let boxesSent = 0;
+  if (boxes.size === 0) {
+    console.log("[SSE Store] No boxes to send to new subscriber.");
+  }
+  for (const box of boxes.values()) {
+    try {
+      const boxDataString = `data:${JSON.stringify(box)}\n\n`;
+      console.log(
+        `[SSE Store] Sending box data to new subscriber: ${boxDataString.trim()}`,
+      );
+      w.write(boxDataString);
+      boxesSent++;
+    } catch (error) {
+      console.error(
+        `Failed to write initial box data to SSE subscriber. Removing subscriber.`,
+        error,
+      );
+      subs.delete(w); // Ensure we break if this writer is problematic
+      break;
+    }
+  }
+  console.log(
+    `[SSE Store] Sent ${boxesSent} initial box states to new subscriber.`,
+  );
 };
 
 export const purgeStale = (maxAge = 30000): void => {

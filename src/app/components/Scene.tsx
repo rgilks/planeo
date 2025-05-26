@@ -14,7 +14,7 @@ import { useMessageStore } from "@/stores/messageStore";
 import { useSimulationStore } from "@/stores/simulationStore";
 import { AIAgentViews } from "@components/AIAgentViews";
 import { Eyes } from "@components/Eyes";
-import { FallingCubes } from "@components/FallingCubes";
+import { ServerDrivenBoxes } from "@components/FallingCubes";
 import { StartOverlay } from "@components/StartOverlay";
 
 const DOWNSCALED_WIDTH = 320;
@@ -204,7 +204,7 @@ const Scene = ({ myId }: { myId: string }) => {
         <color attach="background" args={["#000"]} />
         <Physics>
           <CanvasContent myId={myId} />
-          <FallingCubes />
+          <ServerDrivenBoxes />
         </Physics>
       </Canvas>
     </>

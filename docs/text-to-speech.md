@@ -4,6 +4,8 @@ This document outlines the Text-to-Speech (TTS) feature implemented in the appli
 
 ## Overview
 
+Currently, the `generateAudio` service (see `src/lib/audioService.ts`) returns a static test audio URL (e.g., a T-Rex roar) for development and testing purposes, rather than dynamically generating speech for each message using Google Cloud TTS. The implementation details below describe the setup for the Google Cloud TTS integration that was prototyped or is planned for full integration.
+
 The TTS system is designed to provide a distinct and consistent voice for each user in the chat.
 When a new chat message is received, if it's not from the current user and not a command message (e.g., starting with `/`), the system will automatically synthesize the message text into speech and play it.
 

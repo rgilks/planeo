@@ -1,10 +1,10 @@
 # AI Agent Vision System
 
-This document details the implementation of the AI agent vision system in Planeo, focusing on how Orion and Nova perceive and display their environment.
+This document details the implementation of the AI agent vision system in Planeo, focusing on how AI agents perceive and display their environment.
 
 ## Overview
 
-AI agents in Planeo, such as Orion and Nova, have their own virtual cameras within the 3D scene. These cameras are used to capture images of their surroundings, providing them with visual input for decision-making and displaying their perspective to the user.
+AI agents in Planeo have their own virtual cameras within the 3D scene. These cameras are used to capture images of their surroundings, providing them with visual input for decision-making and displaying their perspective to the user.
 
 ## View Rendering and Updates
 

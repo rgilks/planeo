@@ -8,25 +8,105 @@
   <a href='https://ko-fi.com/N4N31DPNUS' target='_blank'><img height='36' style='border:0px;height:36px;margin-bottom: 20px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 </div>
 
+Planeo is an interactive 3D web application where users and AI agents coexist and interact in a shared environment. It showcases real-time multi-user communication, AI-driven agents with vision and speech capabilities, and a dynamic physics-based world.
+
 ## Core Features
 
 - **3D Environment:** Interactive 3D space built with React Three Fiber.
 - **Real-time Multi-user Interaction:** See other users' movements (represented as eyeballs) in real-time using Server-Sent Events (SSE).
-- **AI Agents with Synchronized Actions & Speech:** Two AI agents ("AI-1" and "AI-2") are present by default. They generate chat messages and actions (like moving or turning) based on visual stimuli. Their actions are performed on the client, and the associated chat message's audio is played. The next AI decision cycle for an agent is triggered only after its current audio playback completes, ensuring a synchronized and more natural interaction flow. AI agent views update visually at ~10 FPS. ([Details](/docs/ai-agents.md), [Vision Details](/docs/ai-agent-vision.md), [New Interaction Flow](/docs/ai-interaction-flow.md))
+- **AI Agents with Synchronized Actions & Speech:** AI agents (configurable, default to "AI-1" and "AI-2") perceive their surroundings, generate chat messages, and perform actions (like moving or turning). Their actions are synchronized with audio playback of their speech, and their visual perspective is updated at ~10 FPS. ([Details](/docs/ai-agents.md), [Vision Details](/docs/ai-agent-vision.md), [Interaction Flow](/docs/ai-interaction-flow.md))
 - **Chat Functionality:** View messages from AI agents in a shared chat window. ([Details](/docs/chat.md))
-- **Text-to-Speech (TTS):** Chat messages from AI agents are spoken aloud. The system now uses a test audio track for this feature during development. ([Details](/docs/text-to-speech.md))
-- **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
+- **Text-to-Speech (TTS):** Chat messages from AI agents can be spoken aloud. Currently, this uses a test audio track for development. A full Google Cloud TTS integration is prototyped. ([Details](/docs/text-to-speech.md), `src/lib/audioService.ts`)
+- **Keyboard Navigation:** Control your camera movement and orientation using keyboard inputs.
+- **Physics-based World:** Interact with objects like falling cubes in an environment governed by physics. ([Details](/docs/physics.md))
 
 ## Simulation Start
 
-**Important:** To ensure audio playback (like AI agent speech) functions correctly due to browser policies, you must now click on the screen to start the simulation. An overlay will prompt this action upon loading.
+**Important:** To ensure audio playback (like AI agent speech) functions correctly due to browser policies, you must click on the screen to start the simulation. An overlay will prompt this action upon loading.
 
-## Planned Features
+## Getting Started
 
-The following features are planned for future development:
+Follow these instructions to set up and run Planeo on your local machine.
 
-- **AI Services:** Potential integration with Google Cloud Text-to-Speech and Google GenAI.
-- **Enhanced World Interaction:** More ways for users and AI to interact with the 3D environment.
+### Prerequisites
+
+- Node.js (v22 or higher recommended)
+- npm (comes with Node.js) or yarn
+
+### Setup Instructions
+
+1.  **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/rgilks/planeo.git
+    cd planeo
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    npm install
+    # or
+    # yarn install
+    ```
+
+3.  **Set up environment variables:**
+    Copy the example environment file to create your local configuration:
+
+    ```bash
+    cp .env.example .env.local
+    ```
+
+    Now, edit `.env.local` and provide the necessary values:
+
+    - `NEXT_PUBLIC_APP_URL`: The public URL of your application (e.g., `http://localhost:3000` for local development).
+      - _Used by: `src/app/actions/generateMessage.ts` for SSE event posting._
+    - `GOOGLE_AI_API_KEY`: Your API key for Google Generative AI (e.g., Gemini).
+      - _Used by: `src/lib/googleAI.ts` for AI text and vision model interactions._
+    - `AI_AGENTS_CONFIG` (Optional): JSON string to define custom AI agents. If not set, defaults to two agents ("AI-1", "AI-2").
+      - _Example: `AI_AGENTS_CONFIG='[{"id":"custom-ai-1","displayName":"Custom AI Alpha"},{"id":"custom-ai-2","displayName":"Custom AI Beta"}]'`_
+      - _Used by: `src/domain/aiAgent.ts`, `src/app/api/events/route.ts`._
+      - See `docs/ai-agents.md` for more details.
+    - `TOTAL_AGENTS` (Optional): The maximum number of AI agents allowed in the environment. Defaults to 0 if not set on the server-side, influencing AI agent initialization.
+      - _Used by: `src/lib/env.ts`, potentially affecting `src/app/api/events/sseStore.ts`._
+    - `NUMBER_OF_BOXES` (Optional): The number of interactive cubes to spawn in the environment. Defaults to 5 if not set.
+      - _Used by: `src/lib/env.ts`, `src/app/api/events/sseStore.ts`._
+    - `NEXT_PUBLIC_TTS_ENABLED` (Optional): Set to `"false"` to disable Text-to-Speech functionality. Defaults to `true` (enabled).
+      - _Used by: `src/components/ChatMessage.tsx`, `src/app/actions/tts.ts`._
+    - `GOOGLE_APP_CREDS_JSON` (Optional, for full TTS): JSON string containing Google Cloud service account credentials for Text-to-Speech API. Required if you intend to use the full Google Cloud TTS feature (currently prototyped).
+      - _Used by: `src/app/actions/tts.ts`._
+      - See `docs/text-to-speech.md` for setup.
+
+4.  **Run the development server:**
+
+    ```bash
+    npm run dev
+    # or
+    # yarn dev
+    ```
+
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+5.  **Build for production:**
+    ```bash
+    npm run build
+    npm run start
+    # or
+    # yarn build
+    # yarn start
+    ```
+
+## Key Technologies Used
+
+- Next.js (React Framework)
+- React Three Fiber (for 3D graphics)
+- Drei (helpers for React Three Fiber)
+- Rapier (physics engine via `react-three-rapier`)
+- Zustand (state management)
+- Google Generative AI (for AI agent logic)
+- Server-Sent Events (SSE for real-time communication)
+- TypeScript
+- Zod (schema validation)
 
 ## Technical Documentation
 
@@ -34,19 +114,39 @@ More detailed technical documentation for various aspects of the project can be 
 
 - `docs/ai-agents.md`: Details on AI agent behavior, configuration, and capabilities.
 - `docs/ai-agent-vision.md`: Describes how AI agents perceive and display their environment.
-- `docs/ai_services.md`: Information on external AI services integrated or planned.
 - `docs/chat.md`: Overview of the chat system.
 - `docs/physics.md`: Explanation of the physics simulation for objects in the 3D scene.
 - `docs/real-time-camera-movement.md`: Covers how camera/user movements are handled and synchronized.
 - `docs/sse-event-handling.md`: Describes the Server-Sent Events (SSE) mechanism for real-time updates.
-- `docs/text-to-speech.md`: Information on the text-to-speech functionality for chat messages.
+- `docs/text-to-speech.md`: Information on the text-to-speech functionality (currently using test audio, with details on the planned full integration).
+- `docs/ai-interaction-flow.md`: Details the synchronized flow of AI actions, chat, and audio playback.
 
-## Recent Developments
+## Planned Features
 
-- **New AI Interaction Flow with Audio Synchronization (Recent Major Change):** The core AI agent interaction loop has been refactored. The Language Model (LLM) now returns both a chat message and an action. The backend generates an audio source for the chat message. On the client-side, an orchestrator component manages performing the AI's action and then playing the generated audio. Crucially, the next request to the LLM for that agent is only made after the audio playback for its current message has completed. This ensures actions and speech are synchronized and prevents rapid, out-of-sync requests. ([Details](/docs/ai-interaction-flow.md))
-- **Enhanced Physics: Physical Eyes & Wider Cube Spread (2025-07-29):** The physics simulation has been updated. User eyeballs are now physical objects (`kinematicPosition` `RigidBody`) that can interact with and push the falling cubes. The initial scattering area for the cubes has also been quadrupled. See `docs/physics.md` for more details.
-- **Configurable AI Agents via Environment Variable (Relevant Recent Change):** AI agent system now supports a variable number of agents defined via the `AI_AGENTS_CONFIG` environment variable. ([Details](/docs/ai-agents.md))
-- **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes.
+The following are areas for future development:
+
+- **Full Text-to-Speech Integration:** Completing the switch from test audio to dynamic Google Cloud TTS.
+- **Enhanced AI Capabilities:** More complex AI behaviors, memory, and interaction models.
+- **User-to-User Chat:** Allowing human users to chat directly with each other.
+- **Expanded World Interactions:** More ways for users and AI to interact with the 3D environment and its objects.
+- **Persistent User Accounts/Profiles.**
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/your-feature-name`).
+3.  Make your changes.
+4.  Commit your changes (`git commit -m 'Add some feature'`).
+5.  Push to the branch (`git push origin feature/your-feature-name`).
+6.  Open a Pull Request.
+
+Please ensure your code adheres to the project's linting rules (`npm run lint`) and all checks pass (`npm run check`).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Environment Variables
 

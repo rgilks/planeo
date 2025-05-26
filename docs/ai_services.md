@@ -1,6 +1,6 @@
 # AI Services Integration
 
-This document outlines the AI services used in Planeo, focusing on Google GenAI for agent behavior and Google Cloud Text-to-Speech for spoken chat.
+This document outlines the AI services used in Planeo, focusing on Google GenAI for agent behavior.
 
 ## AI Agent Behavior (Google GenAI)
 
@@ -29,9 +29,5 @@ The system prompt is crucial for shaping the AI's behavior, including:
 - Its understanding of different entities in the scene (e.g., other spherical eyes vs. cubes).
 - Its communication style and decision-making process for actions.
 - Encouraging specific behaviors like looking at the interlocutor during chat.
-
-## Text-to-Speech (Google Cloud TTS)
-
-Details on Google Cloud Text-to-Speech integration can be found in the main [Text-to-Speech documentation](./text-to-speech.md).
 
 _(Further details on GenAI model versions, specific prompt iterations, and safety settings will be added as the system evolves.)_

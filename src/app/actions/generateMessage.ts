@@ -126,8 +126,12 @@ export async function callAIForStory(
     safetySettings,
   };
 
+  console.log("AI Story Prompt:", JSON.stringify(request, null, 2));
+
   const result = await genAI.models.generateContent(request);
   const text = result.text;
+
+  console.log("AI Story Response:", text);
 
   return text;
 }
@@ -150,7 +154,7 @@ export const generateAiChatMessage = async (
             : "User");
         return `${senderName}: ${msg.text}`;
       })
-      .join("\\\\n") + `\\\\n${agentName}:`;
+      .join("\n") + `\n${agentName}:`;
 
   try {
     const aiResponseText = await callAIForStory(prompt);
@@ -251,10 +255,10 @@ ${historySlice
         : "User");
     return `${senderName}: ${msg.text}`;
   })
-  .join("\\\\\\\\n")}
+  .join("\n")}
 
 This is a log of YOUR recent actions:
-${actionHistory.length > 0 ? actionHistory.map(formatActionForPrompt).join("\\\\\\\\n") : "You haven\'t taken any specific actions yet."}
+${actionHistory.length > 0 ? actionHistory.map(formatActionForPrompt).join("\n") : "You haven\'t taken any specific actions yet."}
 
 You think you might be called ${agentDisplayName}
 
@@ -329,9 +333,19 @@ Your response:`;
     safetySettings,
   };
 
+  console.log(
+    `AI Action/Chat Prompt for ${agentDisplayName}:`,
+    JSON.stringify(request, null, 2),
+  );
+
   try {
     const result = await genAI.models.generateContent(request);
     const aiResponseText = result.text;
+
+    console.log(
+      `AI Action/Chat Raw Response for ${agentDisplayName}:`,
+      aiResponseText,
+    );
 
     if (!aiResponseText || !aiResponseText.trim()) {
       return undefined;

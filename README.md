@@ -12,9 +12,9 @@
 
 - **3D Environment:** Interactive 3D space built with React Three Fiber.
 - **Real-time Multi-user Interaction:** See other users' movements (represented as eyeballs) in real-time using Server-Sent Events (SSE).
-- **AI Agents:** Two AI agents ("AI-1" and "AI-2") are present by default, each with a unique eyeball and chat identity. Their number and properties can be configured via the `AI_AGENTS_CONFIG` environment variable. They can generate chat messages and respond to visual stimuli, with actions broadcast in real-time. ([Details](/docs/ai-agents.md))
-- **Chat Functionality:** Send and receive messages in a shared chat window.
-- **Text-to-Speech (TTS):** Chat messages from other users are spoken aloud with a distinct voice for each user. ([Details](/docs/text-to-speech.md))
+- **AI Agents:** Two AI agents ("AI-1" and "AI-2") are present by default, each with a unique eyeball and chat identity. Their number and properties can be configured via the `AI_AGENTS_CONFIG` environment variable. They can generate chat messages and respond to visual stimuli, with actions broadcast in real-time. AI agent views update visually at ~10 FPS, while their decision-making (LLM invocation) rate is controlled to optimize performance and cost. ([Details](/docs/ai-agents.md), [Vision Details](/docs/ai-agent-vision.md))
+- **Chat Functionality:** View messages from AI agents in a shared chat window. ([Details](/docs/chat.md))
+- **Text-to-Speech (TTS):** Chat messages from AI agents are spoken aloud with a distinct voice for each agent. ([Details](/docs/text-to-speech.md))
 - **Keyboard Navigation:** Control camera movement and orientation using keyboard inputs.
 
 ## Simulation Start
@@ -26,33 +26,26 @@
 The following features are planned for future development:
 
 - **AI Services:** Potential integration with Google Cloud Text-to-Speech and Google GenAI.
-- **Authentication:** User authentication via NextAuth.
-- **Database Integration:** Utilizing a local SQLite database via better-sqlite3 for persistent data storage.
-- **Enhanced AI Agent View Updates:** AI agent views (Orion and Nova) now update visually much more frequently (~10 FPS), while their decision-making (LLM invocation) rate remains controlled to optimize performance and cost.
+- **Enhanced World Interaction:** More ways for users and AI to interact with the 3D environment.
 
 ## Technical Documentation
 
 More detailed technical documentation for various aspects of the project can be found in the `docs/` folder:
 
 - `docs/ai-agents.md`: Details on AI agent behavior, configuration, and capabilities.
+- `docs/ai-agent-vision.md`: Describes how AI agents perceive and display their environment.
 - `docs/ai_services.md`: Information on external AI services integrated or planned.
+- `docs/chat.md`: Overview of the chat system.
 - `docs/physics.md`: Explanation of the physics simulation for objects in the 3D scene.
 - `docs/real-time-camera-movement.md`: Covers how camera/user movements are handled and synchronized.
-- `docs/sse-event-handling.md`: Describes the Server-Sent Events (SSE) mechanism for real-time updates, including synchronization of box (cube) states like color and position.
+- `docs/sse-event-handling.md`: Describes the Server-Sent Events (SSE) mechanism for real-time updates.
 - `docs/text-to-speech.md`: Information on the text-to-speech functionality for chat messages.
 
 ## Recent Developments
 
 - **Enhanced Physics: Physical Eyes & Wider Cube Spread (2025-07-29):** The physics simulation has been updated. User eyeballs are now physical objects (`kinematicPosition` `RigidBody`) that can interact with and push the falling cubes. The initial scattering area for the cubes has also been quadrupled. See `docs/physics.md` for more details.
-- **Physics Integration with Falling Cubes (YYYY-MM-DD):** Added a physics simulation using `react-three-rapier`. When the scene loads, a number of randomly sized and colored cubes fall from the sky, bounce, and settle due to gravity. See `docs/physics.md` for more information.
-- **Default Visible AI Agents & Unique Identities (YYYY-MM-DD):** Implemented default visibility for two AI agents ("AI-1", "AI-2") upon loading. They now have distinct names in chat and appear as separate entities in the 3D space. The system still supports configuration via `AI_AGENTS_CONFIG` for custom setups.
-- **Configurable AI Agents (YYYY-MM-DD):** Refactored the AI agent system to support a variable number of agents defined via the `AI_AGENTS_CONFIG` environment variable. This replaces the previously hardcoded two-agent system. See `docs/ai-agents.md` for more information.
-- **Multi-AI Agent System (YYYY-MM-DD):** Introduced two AI agents, Iris and Cyan, capable of independent chat and vision-based responses. Their activities are broadcast via the event stream. See `docs/ai-agents.md` for more information.
-- **Text-to-Speech for Chat (2025-05-25):** Implemented text-to-speech for chat messages. Messages from other users are now read aloud using distinct, consistent voices. The system utilizes Google Cloud TTS. More details can be found in `docs/text-to-speech.md`.
-- **Chat Functionality (2025-05-25):** Users can now send and receive messages in a chat window. Messages are displayed with user identifiers and timestamps.
-- **Keyboard-Only Look Controls (2025-05-25):** Player look (camera orientation) is now controlled exclusively by keyboard. A/D keys or Left/Right arrow keys rotate the view left/right (yaw). Mouse look has been disabled. W/S or Up/Down arrow keys move forward/backward relative to the current view direction.
-- **Arrow Key Navigation (2025-05-25):** Users can now move their viewpoint (eye) around the plane using the arrow keys (up, down, left, right) in addition to WASD controls. These movements are broadcast to other connected users in real-time.
-- **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes. More details can be found in `docs/rendering_issues.md`.
+- **Configurable AI Agents via Environment Variable (Relevant Recent Change):** AI agent system now supports a variable number of agents defined via the `AI_AGENTS_CONFIG` environment variable. ([Details](/docs/ai-agents.md))
+- **Visual Fix (2024-07-28):** Resolved a Z-fighting issue causing flickering between eyeballs and the background grid by adjusting object positioning and camera clipping planes.
 
 ## Environment Variables
 

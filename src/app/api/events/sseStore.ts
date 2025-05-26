@@ -72,28 +72,26 @@ export const setEye = (
   id: string,
   p: Vec3 | undefined,
   l: Vec3 | undefined,
+  name?: string,
 ): void => {
   const existingEye = eyes.get(id);
   const now = Date.now();
 
-  // Start with the new data, or undefined if not provided
   let newP = p;
   let newL = l;
+  let newName = name;
 
-  // If new data for p or l is undefined, try to use existing data
   if (newP === undefined && existingEye?.p) {
     newP = existingEye.p;
   }
   if (newL === undefined && existingEye?.l) {
     newL = existingEye.l;
   }
+  if (newName === undefined && existingEye?.name) {
+    newName = existingEye.name;
+  }
 
-  // We must have at least a position to store/broadcast an eye
   if (newP === undefined) {
-    // This case should ideally be prevented by the caller (route.ts)
-    // by ensuring at least p or l is present in the incoming data,
-    // and if only l is new, p must exist from a previous state.
-    // However, if an eye is new and only 'l' is provided, we can't store it.
     console.warn(`setEye called for id ${id} without position data. Ignoring.`);
     return;
   }
@@ -109,6 +107,9 @@ export const setEye = (
   }
   if (newL) {
     msg.l = newL;
+  }
+  if (newName) {
+    msg.name = newName;
   }
 
   eyes.set(id, msg);

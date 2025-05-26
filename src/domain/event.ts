@@ -7,6 +7,7 @@ import { MessageSchema } from "./message";
 export const EyeUpdateSchema = z.object({
   type: z.literal("eyeUpdate"),
   id: z.string().min(1),
+  name: z.string().optional(),
   p: Vec3Schema.optional(),
   l: Vec3Schema.optional(),
   t: z.number(),

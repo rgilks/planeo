@@ -39,9 +39,9 @@ const useKeyboardControls = () => {
   return keys;
 };
 
-const CanvasContent = ({ myId }: { myId: string }) => {
+const CanvasContent = ({ myId, myName }: { myId: string; myName?: string }) => {
   const { camera, gl } = useThree();
-  useEyePositionReporting(myId, camera);
+  useEyePositionReporting(myId, myName || myId, camera);
   useAIAgentController(myId);
   const keyboard = useKeyboardControls();
   const isChatInputFocused = useInputControlStore((s) => s.isChatInputFocused);
@@ -178,7 +178,7 @@ const CanvasContent = ({ myId }: { myId: string }) => {
   );
 };
 
-const Scene = ({ myId }: { myId: string }) => {
+const Scene = ({ myId, myName }: { myId: string; myName?: string }) => {
   const myIdRef = useRef(myId);
   const isStarted = useSimulationStore((state) => state.isStarted);
 
@@ -203,7 +203,10 @@ const Scene = ({ myId }: { myId: string }) => {
       >
         <color attach="background" args={["#000"]} />
         <Physics>
-          <CanvasContent myId={myId} />
+          <CanvasContent
+            myId={myId}
+            {...(myName !== undefined && { myName })}
+          />
           <ServerDrivenBoxes />
         </Physics>
       </Canvas>

@@ -52,6 +52,7 @@ export const GET = async () => {
         agent.id,
         [xPosition, EYE_Y_POSITION, 5],
         [xPosition, EYE_Y_POSITION, 0],
+        agent.displayName,
       );
       agentEyesInitialized = true;
     }
@@ -153,6 +154,7 @@ export const POST = async (req: NextRequest) => {
         validatedEyeData.data.id,
         validatedEyeData.data.p,
         validatedEyeData.data.l,
+        validatedEyeData.data.name,
       );
       // No need to broadcast eye updates here, sseStore handles broadcasting periodic snapshots
     }

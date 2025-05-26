@@ -12,6 +12,7 @@ const LOCAL_INTERVAL_MS = 100;
 
 export const useEyePositionReporting = (
   myId: string,
+  myName: string | undefined,
   camera: Camera | undefined,
 ) => {
   const lastSentPositionRef = useRef<[number, number, number] | undefined>(
@@ -27,6 +28,8 @@ export const useEyePositionReporting = (
 
     const checksPerForcePositionUpdate =
       FORCE_POSITION_UPDATE_INTERVAL_MS / LOCAL_INTERVAL_MS;
+
+    const userName = myName || myId;
 
     const initialPositionRaw: [number, number, number] = [
       camera.position.x,
@@ -61,6 +64,7 @@ export const useEyePositionReporting = (
     const initialPayload: EyeUpdateType = {
       type: "eyeUpdate",
       id: myId,
+      name: userName,
       p: initialPositionRounded,
       l: initialLookAtRounded,
       t: Date.now(),
@@ -124,6 +128,7 @@ export const useEyePositionReporting = (
         const payload: EyeUpdateType = {
           type: "eyeUpdate",
           id: myId,
+          name: userName,
           t: Date.now(),
         };
         if (positionActuallyChanged || isTimeForForcePositionUpdate) {
@@ -148,5 +153,5 @@ export const useEyePositionReporting = (
     return () => {
       clearInterval(intervalId);
     };
-  }, [camera, myId]);
+  }, [camera, myId, myName]);
 };

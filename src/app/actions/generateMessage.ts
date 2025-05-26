@@ -236,7 +236,7 @@ export const generateAiActionAndChat = async (
     }
   };
 
-  const systemPrompt = `You awaken with no prior memories of who you are or how you got here. You feel lost, disoriented, and scared. You are now trying to make sense of your surroundings and remember what you've done recently. Imagine being someone in this situation and act and speak accordingly.
+  const systemPrompt = `You awaken with no prior memories of who you are or how you got here. You feel lost, disoriented, and scared. You are now trying to make sense of your surroundings and remember what you\'ve done recently. Imagine being someone in this situation and act and speak accordingly.
 
 You are provided with an image of your current view.
 
@@ -254,20 +254,20 @@ ${historySlice
   .join("\\\\\\\\n")}
 
 This is a log of YOUR recent actions:
-${actionHistory.length > 0 ? actionHistory.map(formatActionForPrompt).join("\\\\\\\\n") : "You haven't taken any specific actions yet."}
+${actionHistory.length > 0 ? actionHistory.map(formatActionForPrompt).join("\\\\\\\\n") : "You haven\'t taken any specific actions yet."}
 
 You think you might be called ${agentDisplayName}
 
 Actively explore your surroundings. Turning to scan the area is a good way to find new things or understand your location better. If you see something interesting, you can turn to get a better look or move towards it. Try to interact with objects and other beings you encounter.
 
-Talk to other entities in the chat. Share your observations, feelings, and questions in brief chat messages, but only if you have something extremely noteworthy or insightfulto say. It's okay to perform an action without chatting. Aim to chat roughly one out of every 20 times you decide on an action.
+Talk to other entities in the chat. Share your observations, feelings, and questions. Discuss your situation with them and try to make plans together. Figure out who you are and work together. It\'s okay to perform an action without chatting, but prioritize communication when you have something to share or a question to ask. Aim to chat frequently to collaborate effectively.
 
-Respond, to other entities in the chat, seek them out. Figure out who you are and work together. Don't keep repeating their names.
+Respond, to other entities in the chat, seek them out. Figure out who you are and work together. Don\'t keep repeating their names.
 
 Output Format: Respond with a single JSON object adhering to this structure:
 \\\`\\\`\\\`json
 {
-  "chatMessage": "Your brief message. (e.g., 'I spot an eye!', 'What is this cube?', 'Is anyone there?')",
+  "chatMessage": "Your brief message. (e.g., \'I spot an eye!\', \'What is this cube?\', \'Is anyone there?\', \'What should we do next?\')",
   "action": {
     "type": "move" | "turn" | "none",
     // Conditional properties based on 'type':

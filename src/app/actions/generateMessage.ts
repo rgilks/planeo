@@ -270,19 +270,27 @@ Your response:`;
         validatedResponse.data,
       );
 
-      let audioSrc: string | undefined;
+      let audioSrcGenerated: string | undefined;
+
       if (validatedResponse.data.chatMessage) {
-        audioSrc = await generateAudio(validatedResponse.data.chatMessage);
+        audioSrcGenerated = await generateAudio(
+          validatedResponse.data.chatMessage,
+        );
+
         const aiChatMessage: Message = {
           id: uuidv4(),
           userId: aiAgentId,
           name: agentDisplayName,
           text: validatedResponse.data.chatMessage,
           timestamp: Date.now(),
+          audioSrc: audioSrcGenerated,
         };
         postChatMessageToEvents(aiChatMessage);
       }
-      return { ...validatedResponse.data, audioSrc };
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      return { ...validatedResponse.data, audioSrc: audioSrcGenerated };
     } else {
       console.error(
         `AI Action/Chat: Failed to validate AI JSON for ${agentDisplayName}:`,
@@ -294,25 +302,9 @@ Your response:`;
     }
   } catch (error) {
     console.error(
-      `AI Action/Chat: Error generating content for ${agentDisplayName}:`,
+      `AI Action/Chat: Error generating AI response for ${agentDisplayName}:`,
       error instanceof Error ? error.stack : error,
     );
-
-    if (error instanceof Error) {
-      const gError = error as {
-        response?: { candidates?: Array<{ safetyRatings?: unknown }> };
-      };
-      if (
-        gError.response?.candidates &&
-        gError.response.candidates.length > 0 &&
-        gError.response.candidates[0]?.safetyRatings
-      ) {
-        console.error(
-          "AI Action/Chat: Safety feedback:",
-          gError.response.candidates[0]?.safetyRatings,
-        );
-      }
-    }
     return undefined;
   }
 };

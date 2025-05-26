@@ -193,3 +193,45 @@ export const downscaleImage = (
     };
     img.src = dataUrl;
   });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  limit: number,
+): ((
+  ...args: Parameters<T>
+) => Promise<Awaited<ReturnType<T>> | undefined>) => {
+  let lastFunc: NodeJS.Timeout | undefined;
+  let lastRan: number | undefined;
+
+  return async (
+    ...args: Parameters<T>
+  ): Promise<Awaited<ReturnType<T>> | undefined> => {
+    const execute = async (): Promise<Awaited<ReturnType<T>>> => {
+      const result = func(...args);
+      return result instanceof Promise ? await result : result;
+    };
+
+    if (!lastRan) {
+      lastRan = Date.now();
+      return execute();
+    } else {
+      if (lastFunc) {
+        clearTimeout(lastFunc);
+      }
+      return new Promise((resolve) => {
+        lastFunc = setTimeout(
+          async () => {
+            if (Date.now() - (lastRan ?? 0) >= limit) {
+              lastRan = Date.now();
+              resolve(await execute());
+            } else {
+              resolve(undefined);
+            }
+          },
+          limit - (Date.now() - (lastRan ?? 0)),
+        );
+      });
+    }
+  };
+};

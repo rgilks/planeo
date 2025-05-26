@@ -3,17 +3,23 @@ import { immer } from "zustand/middleware/immer";
 
 import { type BoxEventType } from "@/domain";
 import {
+  BoxUpdatePayloadSchema,
+  type ValidatedBoxUpdatePayloadType,
+} from "@/domain/box";
+import {
   EventSchema,
   EyeUpdateType,
   ChatMessageEventType,
 } from "@/domain/event";
+import { throttle } from "@/lib/utils";
 
-import { useEyeStore } from "./eyeStore"; // Import the singular eyeStore
+import { useBoxStore } from "./boxStore";
+import { useEyeStore } from "./eyeStore";
 
 // Define listener types
 type EyeUpdateEventListener = (event: EyeUpdateType) => void;
 type ChatMessageEventListener = (event: ChatMessageEventType) => void;
-type BoxEventListener = (event: BoxEventType) => void; // Added BoxEventListener
+type BoxEventListener = (event: BoxEventType) => void;
 
 // Augment the Window interface for the debug store
 declare global {
@@ -29,10 +35,13 @@ interface EventStoreState {
   listeners: {
     eyeUpdate: EyeUpdateEventListener[];
     chatMessage: ChatMessageEventListener[];
-    box: BoxEventListener[]; // Added for box events
+    box: BoxEventListener[];
   };
   cachedEyeUpdates: EyeUpdateType[];
   eyes: EyeUpdateType[];
+  throttledSendBoxUpdate: (
+    boxUpdate: ValidatedBoxUpdatePayloadType,
+  ) => Promise<void>;
 }
 
 interface EventStoreActions {
@@ -42,7 +51,8 @@ interface EventStoreActions {
   subscribeChatMessageEvents: (
     callback: ChatMessageEventListener,
   ) => () => void;
-  subscribeBoxEvents: (callback: BoxEventListener) => () => void; // Added subscribeBoxEvents
+  subscribeBoxEvents: (callback: BoxEventListener) => () => void;
+  sendBoxUpdate: (boxUpdate: ValidatedBoxUpdatePayloadType) => Promise<void>;
   _handleMessage: (event: MessageEvent) => void;
   _handleError: (event: Event) => void;
 }
@@ -55,10 +65,57 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     listeners: {
       eyeUpdate: [],
       chatMessage: [],
-      box: [], // Initialize box listeners
+      box: [],
     },
     cachedEyeUpdates: [],
     eyes: [],
+    throttledSendBoxUpdate: throttle(
+      async (boxUpdate: ValidatedBoxUpdatePayloadType) => {
+        if (!get().isConnected) {
+          console.warn(
+            "Attempted to send box update while not connected. Ignoring.",
+          );
+          return;
+        }
+
+        const parsedPayload = BoxUpdatePayloadSchema.safeParse(boxUpdate);
+        if (!parsedPayload.success) {
+          console.error(
+            "Invalid box update payload before sending:",
+            parsedPayload.error.flatten(),
+          );
+          set({ lastError: "Invalid box update payload formation" });
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/events", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(parsedPayload.data),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error(
+              "Failed to send box update to server:",
+              response.status,
+              errorData,
+            );
+            set({
+              lastError: `Server error sending box update: ${response.status}`,
+            });
+          } else {
+          }
+        } catch (error) {
+          console.error("Network error sending box update:", error);
+          set({ lastError: "Network error sending box update" });
+        }
+      },
+      300,
+    ),
 
     connect: () => {
       if (get().eventSourceInstance || get().isConnected) {
@@ -96,11 +153,10 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       set((state) => {
         state.listeners.eyeUpdate.push(callback);
         if (state.cachedEyeUpdates.length > 0) {
-          // Deep clone events to prevent passing Immer proxies to setTimeout
           const cacheToDispatch = state.cachedEyeUpdates.map((event) =>
             JSON.parse(JSON.stringify(event)),
           );
-          state.cachedEyeUpdates = []; // Clear original cache
+          state.cachedEyeUpdates = [];
           setTimeout(() => {
             console.log(
               `Dispatching ${cacheToDispatch.length} cached eye events to new subscriber.`,
@@ -112,7 +168,6 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       });
 
       if (dispatchedCache) {
-        // console.log("Scheduled dispatch of cached eye events for new subscriber.");
       }
 
       return () => {
@@ -138,12 +193,9 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     },
 
     subscribeBoxEvents: (callback: BoxEventListener) => {
-      // Implemented subscribeBoxEvents
       set((state) => {
         state.listeners.box.push(callback);
       });
-      // Optionally, if you had caching for box events like for eyes, dispatch them here.
-      // For now, new subscribers will just get future events.
       return () => {
         set((state) => {
           state.listeners.box = state.listeners.box.filter(
@@ -151,6 +203,11 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
           );
         });
       };
+    },
+
+    sendBoxUpdate: async (boxUpdate: ValidatedBoxUpdatePayloadType) => {
+      useBoxStore.getState().optimisticallySetBoxState(boxUpdate);
+      get().throttledSendBoxUpdate(boxUpdate);
     },
 
     _handleMessage: (event: MessageEvent) => {
@@ -173,14 +230,9 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
               }
             });
 
-            // Also update the legacy eyeStore for tests
             useEyeStore.getState().setEye(data as EyeUpdateType);
 
             if (get().listeners.eyeUpdate.length === 0) {
-              // console.log("Caching eyeUpdate event, no listeners yet:", data);
-              // set((state) => {
-              //   state.cachedEyeUpdates.push(data as EyeUpdateType);
-              // });
             } else {
               [...get().listeners.eyeUpdate].forEach((callback) =>
                 callback(data as EyeUpdateType),
@@ -191,15 +243,8 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
               callback(data as ChatMessageEventType),
             );
           } else if (data.type === "box") {
-            // Added case for "box"
-            // console.log("[EventStore] Received 'box' event:", data);
             const boxEvent = data as BoxEventType;
-            // Directly call the boxStore handler if desired, or use listeners
-            // For consistency with other events, using listeners:
             [...get().listeners.box].forEach((callback) => callback(boxEvent));
-
-            // Alternative: Directly update useBoxStore if only one consumer
-            // useBoxStore.getState().handleBoxEvent(boxEvent);
           }
         } else {
           console.error(

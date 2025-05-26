@@ -1,78 +1,22 @@
 "use client";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { type RapierRigidBody } from "@react-three/rapier";
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect } from "react";
 import React from "react";
-import {
-  TextureLoader,
-  ShaderMaterial,
-  Vector3,
-  Euler,
-  Quaternion,
-  Matrix4,
-} from "three";
+import { Vector3, Euler, Quaternion, Matrix4 } from "three";
 
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
-import { useEventStore } from "@/stores/eventStore";
 import { useEyesStore, ManagedEye } from "@/stores/eyesStore";
 
 import { Eye } from "./Eye";
 
-const EYE_TEXTURE_PATH = "/eye.jpg";
-
-const vertexShader = `
-  precision mediump float;
-  varying vec3 vNormal;
-  void main() {
-    vNormal = normal;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const fragmentShader = `
-  precision mediump float;
-  uniform sampler2D tex;
-  uniform float uOpacity;
-  varying vec3 vNormal;
-  void main() {
-    vec2 uv = normalize(vNormal).xy * 0.5 + 0.5;
-    vec3 color = texture2D(tex, uv).rgb;
-    if (vNormal.z < -0.85) color = vec3(0.777, 0.74, 0.74);
-    gl_FragColor = vec4(color, uOpacity);
-  }
-`;
-
-export const Eyes = ({ myId }: { myId: string }) => {
+export const Eyes = (/*{ myId }: { myId: string }*/) => {
   const refs = useRef<Record<string, React.RefObject<RapierRigidBody | null>>>(
     {},
   );
-  const eyeTexture = useLoader(TextureLoader, EYE_TEXTURE_PATH);
 
   const managedEyes = useEyesStore((s) => s.managedEyes);
-  const syncEyes = useEyesStore((s) => s.syncEyes);
   const updateEyeAnimations = useEyesStore((s) => s.updateEyeAnimations);
-
-  const eyesFromEventStore = useEventStore((state) => state.eyes);
-
-  const baseShaderMaterial = useMemo(
-    () =>
-      new ShaderMaterial({
-        uniforms: {
-          tex: { value: eyeTexture },
-          uOpacity: { value: 1.0 },
-        },
-        vertexShader,
-        fragmentShader,
-        transparent: true,
-      }),
-    [eyeTexture],
-  );
-
-  useEffect(() => {
-    if (Array.isArray(eyesFromEventStore) && eyesFromEventStore.length > 0) {
-      syncEyes(eyesFromEventStore, myId, baseShaderMaterial);
-    }
-  }, [eyesFromEventStore, myId, baseShaderMaterial, syncEyes]);
 
   // Ensure refs are created for new eyes and cleaned up for removed eyes
   useEffect(() => {

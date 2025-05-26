@@ -1,8 +1,8 @@
 "use client";
 
 import { type ChatMessageEventType } from "@/domain/event";
+import { useCommunicationStore } from "@/stores/communicationStore";
 import { useEventStore } from "@/stores/eventStore";
-import { useMessageStore } from "@/stores/messageStore";
 
 import { ChatInput } from "./ChatInput";
 import { ChatMessage } from "./ChatMessage";
@@ -12,8 +12,8 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow = ({ myId }: ChatWindowProps) => {
-  const messages = useMessageStore((s) => s.messages);
-  const addMessage = useMessageStore((s) => s.addMessage);
+  const messages = useCommunicationStore((s) => s.messages);
+  const addMessage = useCommunicationStore((s) => s.addMessage);
   const { sendChatMessage } = useEventStore.getState();
 
   const handleSendMessage = (text: string) => {

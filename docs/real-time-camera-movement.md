@@ -60,8 +60,8 @@ This document outlines the implementation of real-time camera movement and orien
   - For `eyeUpdate` events, it notifies subscribed listeners.
 - **Hook:** `src/hooks/useEyes.ts`
   - Subscribes to `eyeUpdate` events from `useEventStore`.
-  - Updates the `useEyeStore` with the new eye data.
-- **Store:** `src/stores/eyeStore.ts` (`useEyeStore`)
+  - Updates the `useRawEyeEventStore` with the new eye data.
+- **Store:** `src/stores/rawEyeEventStore.ts` (`useRawEyeEventStore`)
   - Stores the state of all users' eyes (positions and look-at vectors).
 - **Component:** `src/app/components/Eyes.tsx` (or similar)
   - Uses the `useEyes` hook to get the current eye data for all users.
@@ -76,5 +76,5 @@ This document outlines the implementation of real-time camera movement and orien
 - `src/app/api/events/sseStore.ts`: Manages SSE connections and broadcasts events.
 - `src/stores/eventStore.ts`: Client-side SSE handling and event dispatching.
 - `src/hooks/useEyes.ts`: Client-side subscription to eye updates for rendering.
-- `src/stores/eyeStore.ts`: Client-side storage of eye data.
+- `src/stores/rawEyeEventStore.ts`: Client-side storage of raw eye event data.
 - `src/app/components/Eyes.tsx`: Renders the eyes of other users.

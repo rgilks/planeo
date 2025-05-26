@@ -3,8 +3,8 @@ import { useEffect } from "react";
 
 import { type BoxEventType } from "@/domain";
 import { useBoxStore } from "@/stores/boxStore";
+import { useCommunicationStore } from "@/stores/communicationStore";
 import { useEventStore } from "@/stores/eventStore";
-import { useMessageStore } from "@/stores/messageStore";
 
 import type { ChatMessageEventType } from "@/domain/event";
 
@@ -16,7 +16,7 @@ export const useEventSource = (myId: React.RefObject<string>) => {
   const subscribeToBoxEvents = useEventStore((s) => s.subscribeBoxEvents);
   const eventSourceConnected = useEventStore((s) => s.isConnected);
 
-  const addMessage = useMessageStore((s) => s.addMessage);
+  const addMessage = useCommunicationStore((s) => s.addMessage);
   const handleBoxEventFromStore = useBoxStore((s) => s.handleBoxEvent);
 
   useEffect(() => {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useChatStore } from "@/stores/chatStore";
+import { useCommunicationStore } from "@/stores/communicationStore";
 
 export const ChatToggleButton = () => {
-  const { isChatVisible, toggleChatVisibility } = useChatStore();
+  const { isChatVisible, toggleChatVisibility } = useCommunicationStore();
 
   return (
     <button

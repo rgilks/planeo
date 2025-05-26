@@ -5,15 +5,16 @@ import { useRef } from "react";
 
 import { ChatToggleButton } from "@/app/components/ChatToggleButton";
 import { ChatWindow } from "@/components/ChatWindow";
-import { useAiChat } from "@/hooks/useAiChat";
-import { useChatStore } from "@/stores/chatStore";
+import { useAiChat, useEyesDataSynchronizer } from "@/hooks";
+import { useCommunicationStore } from "@/stores/communicationStore";
 import Scene from "@components/Scene";
 
 const HomePage = () => {
   const myId = useRef(nanoid(6)).current;
-  const isChatVisible = useChatStore((state) => state.isChatVisible);
+  const isChatVisible = useCommunicationStore((state) => state.isChatVisible);
 
   useAiChat(myId);
+  useEyesDataSynchronizer(myId);
 
   return (
     <>

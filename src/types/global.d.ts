@@ -1,7 +1,7 @@
-import { useEyeStore } from "@/hooks/useEyes";
+import { useRawEyeEventStore } from "@/stores/rawEyeEventStore";
 
 declare global {
   interface Window {
-    __eyeStore?: typeof useEyeStore;
+    __rawEyeEventStore?: typeof useRawEyeEventStore;
   }
 }

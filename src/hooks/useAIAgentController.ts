@@ -14,8 +14,8 @@ import { getAIAgents } from "@/domain/aiAgent";
 import { EYE_Y_POSITION } from "@/domain/sceneConstants";
 import { roundArray } from "@/lib/utils";
 import { useAIVisionStore } from "@/stores/aiVisionStore";
+import { useCommunicationStore } from "@/stores/communicationStore";
 import { useEyesStore } from "@/stores/eyesStore";
-import { useMessageStore } from "@/stores/messageStore";
 
 import type { EyeUpdateType, Vec3 as DomainVec3 } from "@/domain";
 import type { AIAction } from "@/domain/aiAction";
@@ -29,7 +29,7 @@ const MOVEMENT_DISTANCE_MULTIPLIER = 10; // New multiplier
 export const useAIAgentController = (myId: string) => {
   const { gl, scene: mainScene } = useThree();
   const agents = getAIAgents();
-  const getMessages = useMessageStore((s) => s.messages);
+  const getMessages = useCommunicationStore((s) => s.messages);
   const managedEyes = useEyesStore((s) => s.managedEyes);
   const updateAIAgentTarget = useEyesStore((s) => s.updateAIAgentTarget);
   const setAIAgentView = useAIVisionStore((s) => s.setAIAgentView);

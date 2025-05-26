@@ -11,13 +11,18 @@ The chat feature displays text messages from AI agents in real-time within the a
 - **`Message` (Domain Model):** Defined in `src/domain/message.ts` using a Zod schema. It includes `id`, `userId`, `text`, and `timestamp` fields.
 - **`useMessageStore` (Zustand Store):** Located in `src/stores/messageStore.ts`. Manages the state of chat messages, including an array of `Message` objects and an `addMessage` action.
 - **`useChatStore` (Zustand Store):** Located in `src/stores/chatStore.ts`. Manages the visibility state of the chat window (`isChatVisible`) and provides a `toggleChatVisibility` action.
+- **`useCommunicationStore` (Zustand Store):** Located in `src/stores/communicationStore.ts`. This store combines the responsibilities of the previous `useMessageStore` and `useChatStore`. It manages:
+  - An array of `Message` objects (chat messages).
+  - An `addMessage` action to add new messages.
+  - The visibility state of the chat window (`isChatVisible`).
+  - A `toggleChatVisibility` action to show or hide the chat window.
 - **`ChatMessage` (React Component):** Found in `src/components/ChatMessage.tsx`. Displays an individual chat message, showing the user ID (or agent name) and message text.
 - **`ChatWindow` (React Component):** Located in `src/components/ChatWindow.tsx`. Renders the list of chat messages from AI agents. It no longer contains an input field for users to send messages.
 - **`ChatToggleButton` (React Component):** Found in `src/app/components/ChatToggleButton.tsx`. A small, fixed button that allows the user to show or hide the `ChatWindow`.
 
 ## Integration
 
-The `ChatWindow` component is integrated into the main application page (`src/app/page.tsx`). Its visibility is controlled by the `ChatToggleButton` and the `useChatStore`. The `useAiChat` hook, responsible for fetching and displaying AI agent messages, is also initialized on the main page to ensure it operates independently of the chat window's visibility.
+The `ChatWindow` component is integrated into the main application page (`src/app/page.tsx`). Its visibility is controlled by the `ChatToggleButton` and the `useCommunicationStore`. The `useAiChat` hook, responsible for fetching and displaying AI agent messages, is also initialized on the main page to ensure it operates independently of the chat window's visibility.
 
 ## Simulation Start
 

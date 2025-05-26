@@ -9,8 +9,7 @@ import { EYE_Y_POSITION, GROUND_Y_POSITION } from "@/domain/sceneConstants";
 import { useEventSource, useEyePositionReporting } from "@/hooks";
 import { useAIAgentController } from "@/hooks/useAIAgentController";
 import { downscaleImage } from "@/lib/utils";
-import { useInputControlStore } from "@/stores/inputControlStore";
-import { useMessageStore } from "@/stores/messageStore";
+import { useCommunicationStore } from "@/stores/communicationStore";
 import { useSimulationStore } from "@/stores/simulationStore";
 import { AIAgentViews } from "@components/AIAgentViews";
 import { Eyes } from "@components/Eyes";
@@ -44,8 +43,8 @@ const CanvasContent = ({ myId, myName }: { myId: string; myName?: string }) => {
   useEyePositionReporting(myId, myName || myId, camera);
   useAIAgentController(myId);
   const keyboard = useKeyboardControls();
-  const isChatInputFocused = useInputControlStore((s) => s.isChatInputFocused);
-  const messages = useMessageStore((s) => s.messages);
+  const isChatInputFocused = useCommunicationStore((s) => s.isChatInputFocused);
+  const messages = useCommunicationStore((s) => s.messages);
   const lastCaptureTimeRef = useRef<number>(0); // Throttle capture
 
   const targetVelocity = useRef(new Vector3());
@@ -205,7 +204,7 @@ const CanvasContent = ({ myId, myName }: { myId: string; myName?: string }) => {
       </EffectComposer>
       <group>
         <ambientLight intensity={0.08} />
-        <Eyes myId={myId} />
+        <Eyes />
         <directionalLight
           position={[100, 100, 100]}
           intensity={6}

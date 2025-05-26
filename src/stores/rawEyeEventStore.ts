@@ -4,11 +4,11 @@ import { immer } from "zustand/middleware/immer";
 import { type Vec3 } from "@/domain";
 import { EyeUpdateType } from "@/domain/event";
 
-export interface EyeState {
+export interface RawEyeEventState {
   eyes: Record<string, { p?: Vec3; l?: Vec3; t: number }>;
 }
 
-interface EyeStoreActions {
+interface RawEyeEventActions {
   setEye: (eyeUpdate: EyeUpdateType) => void;
   removeStaleEyes: (thresholdMs: number) => void;
 }
@@ -16,11 +16,13 @@ interface EyeStoreActions {
 // Augment the Window interface for the debug store
 declare global {
   interface Window {
-    __eyeStore?: typeof useEyeStore;
+    __rawEyeEventStore?: typeof useRawEyeEventStore;
   }
 }
 
-export const useEyeStore = create<EyeState & EyeStoreActions>()(
+export const useRawEyeEventStore = create<
+  RawEyeEventState & RawEyeEventActions
+>()(
   immer((set) => ({
     eyes: {},
     setEye: (eyeUpdate) =>
@@ -51,5 +53,5 @@ export const useEyeStore = create<EyeState & EyeStoreActions>()(
 );
 
 if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
-  window.__eyeStore = useEyeStore;
+  window.__rawEyeEventStore = useRawEyeEventStore;
 }

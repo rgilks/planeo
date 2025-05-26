@@ -15,7 +15,7 @@ import {
 import { throttle } from "@/lib/utils";
 
 import { useBoxStore } from "./boxStore";
-import { useEyeStore } from "./eyeStore";
+import { useRawEyeEventStore } from "./rawEyeEventStore";
 
 // Define listener types
 type EyeUpdateEventListener = (event: EyeUpdateType) => void;
@@ -38,8 +38,6 @@ interface EventStoreState {
     chatMessage: ChatMessageEventListener[];
     box: BoxEventListener[];
   };
-  cachedEyeUpdates: EyeUpdateType[];
-  eyes: EyeUpdateType[];
   throttledSendBoxUpdate: (
     boxUpdate: ValidatedBoxUpdatePayloadType,
   ) => Promise<void>;
@@ -69,8 +67,6 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
       chatMessage: [],
       box: [],
     },
-    cachedEyeUpdates: [],
-    eyes: [],
     throttledSendBoxUpdate: throttle(
       async (boxUpdate: ValidatedBoxUpdatePayloadType) => {
         if (!get().isConnected) {
@@ -151,25 +147,36 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     },
 
     subscribeEyeUpdates: (callback: EyeUpdateEventListener) => {
-      let dispatchedCache = false;
       set((state) => {
         state.listeners.eyeUpdate.push(callback);
-        if (state.cachedEyeUpdates.length > 0) {
-          const cacheToDispatch = state.cachedEyeUpdates.map((event) =>
-            JSON.parse(JSON.stringify(event)),
-          );
-          state.cachedEyeUpdates = [];
-          setTimeout(() => {
-            console.log(
-              `Dispatching ${cacheToDispatch.length} cached eye events to new subscriber.`,
-            );
-            cacheToDispatch.forEach((cachedEvent) => callback(cachedEvent));
-          }, 0);
-          dispatchedCache = true;
-        }
       });
 
-      if (dispatchedCache) {
+      // Dispatch current state from rawEyeEventStore to the new subscriber
+      const allCurrentEyeStates = useRawEyeEventStore.getState().eyes;
+      const eyeEventsForDispatch: EyeUpdateType[] = Object.entries(
+        allCurrentEyeStates,
+      )
+        .map(([id, data]) => ({
+          type: "eyeUpdate" as const,
+          id,
+          ...data,
+          // name: undefined, // Explicitly undefined if not stored in rawEyeEventStore and EyeUpdateType allows optional name
+        }))
+        // Filter out any events that might be incomplete if necessary, though spread handles missing p/l
+        .filter((event) => event.t); // Ensure timestamp exists, basic validation
+
+      if (eyeEventsForDispatch.length > 0) {
+        setTimeout(() => {
+          // Dispatch asynchronously
+          console.log(
+            `Dispatching ${eyeEventsForDispatch.length} existing eye events to new subscriber.`,
+          );
+          // Deep clone before dispatching to prevent accidental mutation of store state by subscribers
+          const clonedEvents = JSON.parse(
+            JSON.stringify(eyeEventsForDispatch),
+          ) as EyeUpdateType[];
+          clonedEvents.forEach((event) => callback(event));
+        }, 0);
       }
 
       return () => {
@@ -265,26 +272,13 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
         if (parsedEvent.success) {
           const data = parsedEvent.data;
           if (data.type === "eyeUpdate") {
-            set((state) => {
-              const eyeUpdate = data as EyeUpdateType;
-              const existingEyeIndex = state.eyes.findIndex(
-                (e) => e.id === eyeUpdate.id,
-              );
-              if (existingEyeIndex > -1) {
-                state.eyes[existingEyeIndex] = eyeUpdate;
-              } else {
-                state.eyes.push(eyeUpdate);
-              }
-            });
+            useRawEyeEventStore.getState().setEye(data as EyeUpdateType);
 
-            useEyeStore.getState().setEye(data as EyeUpdateType);
-
-            if (get().listeners.eyeUpdate.length === 0) {
-            } else {
-              [...get().listeners.eyeUpdate].forEach((callback) =>
-                callback(data as EyeUpdateType),
-              );
-            }
+            // Dispatch to current listeners
+            // Making a copy of listeners array before iterating to avoid issues if a listener unsubscribes during iteration
+            [...get().listeners.eyeUpdate].forEach((callback) =>
+              callback(data as EyeUpdateType),
+            );
           } else if (data.type === "chatMessage") {
             [...get().listeners.chatMessage].forEach((callback) =>
               callback(data as ChatMessageEventType),

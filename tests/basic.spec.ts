@@ -52,7 +52,7 @@ test.describe("Multi-User Event Synchronization", () => {
     // User 2 verifies receiving the eye update
     const receivedOnPage2 = await pollForCondition(page2, async () => {
       const eyeData = await page2.evaluate((id) => {
-        const storeState = window.__eyeStore?.getState();
+        const storeState = window.__rawEyeEventStore?.getState();
         return storeState?.eyes?.[id];
       }, user1EyeId);
       return JSON.stringify(eyeData?.p) === JSON.stringify(user1EyePos);
@@ -85,7 +85,7 @@ test("original: has title and receives initial event data", async ({
     page,
     async () => {
       const eyeData = await page.evaluate(() => {
-        const storeState = window.__eyeStore?.getState();
+        const storeState = window.__rawEyeEventStore?.getState();
         return storeState?.eyes?.["test-eye"];
       });
       return JSON.stringify(eyeData?.p) === JSON.stringify([1, 2, 3]);

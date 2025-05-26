@@ -4,10 +4,10 @@ import { useEffect, useRef } from "react";
 
 import { generateAiChatMessage } from "@/app/actions/generateMessage";
 import { getAIAgents, isAIAgentId } from "@/domain/aiAgent";
-import { useMessageStore } from "@/stores/messageStore";
+import { useCommunicationStore } from "@/stores/communicationStore";
 
 export const useAiChat = (myId: string) => {
-  const messages = useMessageStore((s) => s.messages);
+  const messages = useCommunicationStore((s) => s.messages);
   const aiResponseInProgress = useRef(false);
 
   useEffect(() => {

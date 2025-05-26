@@ -27,7 +27,7 @@ const postChatMessageToEvents = (message: Message): void => {
   const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
   if (!appUrl) {
     console.error(
-      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message.",
+      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message."
     );
     return;
   }
@@ -79,7 +79,7 @@ export type AIConfigOverrides = Partial<GenerationConfig>;
 
 export async function callAIForStory(
   prompt: string,
-  configOverrides?: AIConfigOverrides,
+  configOverrides?: AIConfigOverrides
 ): Promise<string | undefined> {
   const genAI: GoogleGenAI = await getGoogleAIClient();
 
@@ -114,7 +114,7 @@ export async function callAIForStory(
 
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
-  aiUserId: string,
+  aiUserId: string
 ): Promise<Message | undefined> => {
   const agent = getAIAgentById(aiUserId);
   const agentName = agent?.displayName || aiUserId;
@@ -151,7 +151,7 @@ export const generateAiChatMessage = async (
   } catch (error) {
     console.error(
       `AI Chat: Error generating message for ${agentName}:`,
-      error instanceof Error ? error.stack : error,
+      error instanceof Error ? error.stack : error
     );
     return undefined;
   }
@@ -159,14 +159,12 @@ export const generateAiChatMessage = async (
 
 // Define types for action history
 export type AgentAction = ParsedAIResponse["action"];
-export type ActionHistory = AgentAction[];
 
 // This function replaces the old generateAiVisionResponse
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
-  chatHistory: ChatHistory,
-  actionHistory: ActionHistory,
+  chatHistory: ChatHistory
 ): Promise<ParsedAIResponse | undefined> => {
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
@@ -192,15 +190,16 @@ export const generateAiActionAndChat = async (
   } catch (error) {
     console.error(
       `AI Action/Chat: Failed to save debug image for ${agentDisplayName}:`,
-      error,
+      error
     );
   }
 
   const historySlice = chatHistory;
 
+  /* // Removed unused function
   const formatActionForPrompt = (action: AgentAction): string => {
     if (!action) {
-      return "- An unknown previous action."; // Should ideally not happen if history is clean
+      return "- An unknown previous action."; 
     }
     switch (action.type) {
       case "none":
@@ -210,13 +209,12 @@ export const generateAiActionAndChat = async (
       case "turn":
         return `- Previously, you turned ${action.direction} ${action.degrees} degrees.`;
       default:
-        // This handles any unexpected action types if the schema were to change
-        // or if a non-validated action somehow made it into the history.
         return `- Previously, you performed an uncharacterised action: ${JSON.stringify(action)}`;
     }
   };
+  */
 
-  const systemPrompt = `You awaken with no prior memories of who you are or how you got here. You feel lost, disoriented, and scared. You are now trying to make sense of your surroundings and remember what you\'ve done recently. Imagine being someone in this situation and act and speak accordingly.
+  const systemPrompt = `You awaken with no prior memories of who you are or how you got here. You feel lost, disoriented, scared and freaking out. You are now trying to make sense of your surroundings and remember what you\'ve done recently. Imagine being someone in this situation and act and speak accordingly.
 
 You are provided with an image of your current view.
 
@@ -233,14 +231,11 @@ ${historySlice
   })
   .join("\n")}
 
-This is a log of YOUR recent actions:
-${actionHistory.length > 0 ? actionHistory.map(formatActionForPrompt).join("\n") : "You haven\'t taken any specific actions yet."}
-
 You think you might be called ${agentDisplayName}
 
 Actively explore your surroundings. Turning to scan the area is a good way to find new things or understand your location better. If you see something interesting, you can turn to get a better look or move towards it. Try to interact with objects and other beings you encounter.
 
-Talk to other entities in the chat. Keep your chat messages VERY BRIEF, like one short sentence or a question. Share only essential observations, feelings, or questions. Discuss your situation with them and try to make plans together. Figure out who you are and work together. It\'s okay to perform an action without chatting, but prioritize communication when you have something to share or a question to ask. Aim to chat frequently but always keep it short and to the point to collaborate effectively.
+Talk to other entities in the chat. Keep your chat messages BRIEF, like one sentence or a question. Share only essential observations, feelings, or questions. Discuss your situation with them and try to make plans together. Figure out who you are and work together. It\'s okay to perform an action without chatting, but prioritize communication when you have something to share or a question to ask. Aim to chat frequently but always keep it short and to the point to collaborate effectively.
 
 Respond, to other entities in the chat, seek them out. Figure out who you are and work together. Don\'t keep repeating their names.
 
@@ -311,8 +306,8 @@ Your response:`;
         ],
       },
       null,
-      2,
-    ),
+      2
+    )
   );
 
   try {
@@ -321,7 +316,7 @@ Your response:`;
 
     console.log(
       `AI Action/Chat Raw Response for ${agentDisplayName}:`,
-      aiResponseText,
+      aiResponseText
     );
 
     if (!aiResponseText || !aiResponseText.trim()) {
@@ -345,7 +340,7 @@ Your response:`;
         "Raw response:",
         aiResponseText,
         "Attempted to parse:",
-        jsonToParse,
+        jsonToParse
       );
       return undefined;
     }
@@ -355,7 +350,7 @@ Your response:`;
     if (validatedResponse.success) {
       console.log(
         `AI Action/Chat: Validated response for ${agentDisplayName}:`,
-        validatedResponse.data,
+        validatedResponse.data
       );
 
       if (validatedResponse.data.chatMessage) {
@@ -374,14 +369,14 @@ Your response:`;
         `AI Action/Chat: Failed to validate AI JSON for ${agentDisplayName}:`,
         validatedResponse.error.flatten(),
         "Parsed JSON was:",
-        parsedJson,
+        parsedJson
       );
       return undefined;
     }
   } catch (error) {
     console.error(
       `AI Action/Chat: Error generating for ${agentDisplayName}:`,
-      error instanceof Error ? error.stack : error,
+      error instanceof Error ? error.stack : error
     );
 
     if (error instanceof Error) {
@@ -393,7 +388,7 @@ Your response:`;
       ) {
         console.error(
           "AI Action/Chat: Safety feedback:",
-          gError.response.candidates[0]?.safetyRatings,
+          gError.response.candidates[0]?.safetyRatings
         );
       }
     }

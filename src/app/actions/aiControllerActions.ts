@@ -1,10 +1,6 @@
 "use server";
 
-import {
-  generateAiActionAndChat,
-  type ChatHistory,
-  type ActionHistory,
-} from "./generateMessage";
+import { generateAiActionAndChat, type ChatHistory } from "./generateMessage";
 
 import type { ParsedAIResponse } from "@/domain/aiAction";
 
@@ -17,13 +13,11 @@ export const requestAiDecision = async (
   aiAgentId: string,
   imageDataUrl: string,
   chatHistory: ChatHistory,
-  actionHistory: ActionHistory,
 ): Promise<ParsedAIResponse["action"]> => {
   const decision = await generateAiActionAndChat(
     aiAgentId,
     imageDataUrl,
     chatHistory,
-    actionHistory,
   );
 
   if (decision) {

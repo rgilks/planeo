@@ -32,7 +32,7 @@ const postChatMessageToEvents = (message: Message): void => {
   const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
   if (!appUrl) {
     console.error(
-      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message."
+      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message.",
     );
     return;
   }
@@ -84,7 +84,7 @@ export type AIConfigOverrides = Partial<GenerationConfig>;
 
 export async function callAIForStory(
   prompt: string,
-  configOverrides?: AIConfigOverrides
+  configOverrides?: AIConfigOverrides,
 ): Promise<string | undefined> {
   const genAI: GoogleGenAI = await getGoogleAIClient();
 
@@ -140,13 +140,13 @@ export async function callAIForStory(
 
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
-  aiUserId: string
+  aiUserId: string,
 ): Promise<Message | undefined> => {
   const agent = getAIAgentById(aiUserId);
   const agentName = agent?.displayName || aiUserId;
   console.log(`AI Chat: Generating message for ${agentName}`);
 
-  const historySlice = chatHistory.slice(-50);
+  const historySlice = chatHistory;
   const prompt =
     historySlice
       .map((msg) => {
@@ -172,7 +172,7 @@ export const generateAiChatMessage = async (
       };
       console.log(
         `AI Chat: Generated message for ${agentName}`,
-        aiMessage.text
+        aiMessage.text,
       );
       postChatMessageToEvents(aiMessage);
       return aiMessage;
@@ -182,7 +182,7 @@ export const generateAiChatMessage = async (
   } catch (error) {
     console.error(
       `AI Chat: Error generating message for ${agentName}:`,
-      error instanceof Error ? error.stack : error
+      error instanceof Error ? error.stack : error,
     );
     return undefined;
   }
@@ -192,7 +192,7 @@ export const generateAiChatMessage = async (
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
-  chatHistory: ChatHistory
+  chatHistory: ChatHistory,
 ): Promise<ParsedAIResponse | undefined> => {
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
@@ -212,7 +212,7 @@ export const generateAiActionAndChat = async (
     if (!fs.existsSync(debugImagesDir)) {
       fs.mkdirSync(debugImagesDir, { recursive: true });
       console.log(
-        `AI Action/Chat: Created debug_images directory: ${debugImagesDir}`
+        `AI Action/Chat: Created debug_images directory: ${debugImagesDir}`,
       );
     }
     const imageName = `${aiAgentId}_${Date.now()}.png`;
@@ -220,16 +220,16 @@ export const generateAiActionAndChat = async (
     const imageBuffer = Buffer.from(base64ImageData, "base64");
     fs.writeFileSync(imagePath, imageBuffer);
     console.log(
-      `AI Action/Chat: Saved debug image for ${agentDisplayName} to ${imagePath}`
+      `AI Action/Chat: Saved debug image for ${agentDisplayName} to ${imagePath}`,
     );
   } catch (error) {
     console.error(
       `AI Action/Chat: Failed to save debug image for ${agentDisplayName}:`,
-      error
+      error,
     );
   }
 
-  const historySlice = chatHistory.slice(-10);
+  const historySlice = chatHistory;
 
   const systemPrompt = `You are ${agentDisplayName}. You've just materialized, feeling lost, disoriented, and a bit scared. No memories.
 Your TOP PRIORITY: Find other spherical white orbs (eyeballs like yourself). They might be other beings you can hear. Move towards them.
@@ -260,9 +260,9 @@ ${historySlice
     const senderName =
       msg.name ||
       (isAIAgentId(msg.userId)
-        ? getAIAgentById(msg.userId)?.displayName || "AI"
+        ? getAIAgentById(msg.userId)?.displayName || msg.userId
         : "User");
-    return `${senderName} (${msg.userId}): ${msg.text}`;
+    return `${senderName}: ${msg.text}`;
   })
   .join("\\\\\\\\n")}
 
@@ -315,13 +315,22 @@ Your response:`;
   };
 
   try {
+    // Log the prompt details before calling the AI
+    const promptText = contents[0]?.parts[1]?.text;
+    const imageDataLength =
+      contents[0]?.parts[0]?.inlineData?.data?.length || 0;
+    console.log(
+      `AI Action/Chat: Calling Vision AI for ${agentDisplayName}. Image data length: ${imageDataLength}. Prompt:`,
+      promptText,
+    );
+
     console.log(`AI Action/Chat: Calling Vision AI for ${agentDisplayName}`);
     const result = await genAI.models.generateContent(request);
     const aiResponseText = result.text;
 
     if (!aiResponseText || !aiResponseText.trim()) {
       console.log(
-        `AI Action/Chat: ${agentDisplayName} did not return response text.`
+        `AI Action/Chat: ${agentDisplayName} did not return response text.`,
       );
       return undefined;
     }
@@ -343,7 +352,7 @@ Your response:`;
         "Raw response:",
         aiResponseText,
         "Attempted to parse:",
-        jsonToParse
+        jsonToParse,
       );
       return undefined;
     }
@@ -353,7 +362,7 @@ Your response:`;
     if (validatedResponse.success) {
       console.log(
         `AI Action/Chat: Validated response for ${agentDisplayName}:`,
-        validatedResponse.data
+        validatedResponse.data,
       );
 
       if (validatedResponse.data.chatMessage) {
@@ -372,14 +381,14 @@ Your response:`;
         `AI Action/Chat: Failed to validate AI JSON for ${agentDisplayName}:`,
         validatedResponse.error.flatten(),
         "Parsed JSON was:",
-        parsedJson
+        parsedJson,
       );
       return undefined;
     }
   } catch (error) {
     console.error(
       `AI Action/Chat: Error generating for ${agentDisplayName}:`,
-      error instanceof Error ? error.stack : error
+      error instanceof Error ? error.stack : error,
     );
 
     if (error instanceof Error) {
@@ -391,7 +400,7 @@ Your response:`;
       ) {
         console.error(
           "AI Action/Chat: Safety feedback:",
-          gError.response.candidates[0]?.safetyRatings
+          gError.response.candidates[0]?.safetyRatings,
         );
       }
     }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { type ChatMessageEventType } from "@/domain/event";
 import { useCommunicationStore } from "@/stores/communicationStore";
 import { useEventStore } from "@/stores/eventStore";
@@ -15,6 +17,11 @@ export const ChatWindow = ({ myId }: ChatWindowProps) => {
   const messages = useCommunicationStore((s) => s.messages);
   const addMessage = useCommunicationStore((s) => s.addMessage);
   const { sendChatMessage } = useEventStore.getState();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSendMessage = (text: string) => {
     const newMessage: ChatMessageEventType = {
@@ -48,6 +55,7 @@ export const ChatWindow = ({ myId }: ChatWindowProps) => {
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} currentUserId={myId} />
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <ChatInput onSendMessage={handleSendMessage} />
     </div>

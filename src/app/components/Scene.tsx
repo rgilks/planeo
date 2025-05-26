@@ -12,8 +12,8 @@ import { downscaleImage } from "@/lib/utils";
 import { useCommunicationStore } from "@/stores/communicationStore";
 import { useSimulationStore } from "@/stores/simulationStore";
 import { AIAgentViews } from "@components/AIAgentViews";
+import { ServerDrivenBoxes } from "@components/Box";
 import { Eyes } from "@components/Eyes";
-import { ServerDrivenBoxes } from "@components/FallingCubes";
 import { StartOverlay } from "@components/StartOverlay";
 
 const DOWNSCALED_WIDTH = 320;

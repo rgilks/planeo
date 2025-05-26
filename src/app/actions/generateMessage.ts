@@ -15,7 +15,6 @@ import { z } from "zod";
 import { AIResponseSchema, type ParsedAIResponse } from "@/domain/aiAction";
 import { isAIAgentId, getAIAgentById } from "@/domain/aiAgent";
 import { Message, MessageSchema } from "@/domain/message";
-// Import only what is used in this file
 
 let genAIClient: GoogleGenAI | null = null;
 
@@ -33,7 +32,7 @@ const postChatMessageToEvents = (message: Message): void => {
   const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
   if (!appUrl) {
     console.error(
-      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message.",
+      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message."
     );
     return;
   }
@@ -85,7 +84,7 @@ export type AIConfigOverrides = Partial<GenerationConfig>;
 
 export async function callAIForStory(
   prompt: string,
-  configOverrides?: AIConfigOverrides,
+  configOverrides?: AIConfigOverrides
 ): Promise<string | undefined> {
   const genAI: GoogleGenAI = await getGoogleAIClient();
 
@@ -141,13 +140,13 @@ export async function callAIForStory(
 
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
-  aiUserId: string,
+  aiUserId: string
 ): Promise<Message | undefined> => {
   const agent = getAIAgentById(aiUserId);
   const agentName = agent?.displayName || aiUserId;
   console.log(`AI Chat: Generating message for ${agentName}`);
 
-  const historySlice = chatHistory.slice(-5);
+  const historySlice = chatHistory.slice(-50);
   const prompt =
     historySlice
       .map((msg) => {
@@ -173,7 +172,7 @@ export const generateAiChatMessage = async (
       };
       console.log(
         `AI Chat: Generated message for ${agentName}`,
-        aiMessage.text,
+        aiMessage.text
       );
       postChatMessageToEvents(aiMessage);
       return aiMessage;
@@ -183,7 +182,7 @@ export const generateAiChatMessage = async (
   } catch (error) {
     console.error(
       `AI Chat: Error generating message for ${agentName}:`,
-      error instanceof Error ? error.stack : error,
+      error instanceof Error ? error.stack : error
     );
     return undefined;
   }
@@ -193,7 +192,7 @@ export const generateAiChatMessage = async (
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
-  chatHistory: ChatHistory,
+  chatHistory: ChatHistory
 ): Promise<ParsedAIResponse | undefined> => {
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
@@ -213,7 +212,7 @@ export const generateAiActionAndChat = async (
     if (!fs.existsSync(debugImagesDir)) {
       fs.mkdirSync(debugImagesDir, { recursive: true });
       console.log(
-        `AI Action/Chat: Created debug_images directory: ${debugImagesDir}`,
+        `AI Action/Chat: Created debug_images directory: ${debugImagesDir}`
       );
     }
     const imageName = `${aiAgentId}_${Date.now()}.png`;
@@ -221,48 +220,41 @@ export const generateAiActionAndChat = async (
     const imageBuffer = Buffer.from(base64ImageData, "base64");
     fs.writeFileSync(imagePath, imageBuffer);
     console.log(
-      `AI Action/Chat: Saved debug image for ${agentDisplayName} to ${imagePath}`,
+      `AI Action/Chat: Saved debug image for ${agentDisplayName} to ${imagePath}`
     );
   } catch (error) {
     console.error(
       `AI Action/Chat: Failed to save debug image for ${agentDisplayName}:`,
-      error,
+      error
     );
   }
 
   const historySlice = chatHistory.slice(-10);
 
-  const systemPrompt = `You are ${agentDisplayName}. You have suddenly materialized in this place.
-You have no memory of how you got here or who you are.
-You feel a little disoriented and cautious, perhaps a bit afraid.
+  const systemPrompt = `You are ${agentDisplayName}. You've just materialized, feeling lost, disoriented, and a bit scared. No memories.
+Your TOP PRIORITY: Find other spherical white orbs (eyeballs like yourself). They might be other beings you can hear. Move towards them.
+Before moving, spend a moment slowly rotating to scan your surroundings for these orbs.
 
-You are not alone. There may be other beings in this scene. Try to communicate with them.
-You can see them (and potentially yourself if you could see your own reflection) as floating spherical eyes. These are different from the box-like cubes that are also scattered around.
+You can also investigate other objects (like cubes) by moving towards or gently bumping them, but finding other orbs comes first.
+Share your feelings, what you see, and questions in brief chat messages. When chatting, try to 'lookAt' who you're addressing.
 
-There are also numerous cubes scattered around. Pay attention to the shapes you see.
-
-Communicate your thoughts, observations (based on what you see), and feelings in brief chat messages.
-When you decide to send a chat message, you should also try to look at the being you are addressing.
-This helps them see your "iris and pupil" when you are "talking".
-
-Possible actions are:
-- Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares }
-- Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees }
-- LookAt: { "type": "lookAt", "targetId": "ID_of_the_other_eye_to_look_at" }
-- No action: { "type": "none" } or null
-
-Based on what you see, think, and feel, decide on your next chat message AND your next action.
-Your entire response MUST be a single JSON object matching this structure:
-\`\`\`json
+Respond with a single JSON object:
+\\\`\\\`\\\`json
 {
-  "chatMessage": "Your short chat message here. Example: 'Where am I?' or 'Hello User-123, what are those cubes?'",
-  "action": { "type": "lookAt", "targetId": "User-123" }
+  "chatMessage": "Your brief message (e.g., 'Is anyone out there? I see a white sphere!', 'I feel so alone.', 'What is this cube in front of me?').",
+  "action": { "type": "move" | "turn" | "lookAt" | "none", /* ...action_details... */ }
 }
-\`\`\`
-If you are replying to someone, use their ID (e.g., "User-123", "ai-agent-2") as the targetId for the lookAt action. You can find these IDs in the chat history.
-If you are not addressing anyone specifically or cannot determine an ID, you can use { "type": "none" } for the action, or choose another action like "move" or "turn".
+\\\`\\\`\\\`
 
-Previous chat history (last 10 messages - format is "SenderName (SenderID): MessageText"):
+Actions:
+- Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees } (Use for scanning)
+- Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares } (To approach orbs or investigate objects)
+- LookAt: { "type": "lookAt", "targetId": "ID_of_target_eye" } (From chat history if replying)
+- No action: { "type": "none" }
+
+If not addressing someone, your action can be "none", "turn" to scan, or "move" towards an orb/object.
+
+Previous chat history (SenderName (SenderID): MessageText):
 ${historySlice
   .map((msg) => {
     const senderName =
@@ -272,9 +264,9 @@ ${historySlice
         : "User");
     return `${senderName} (${msg.userId}): ${msg.text}`;
   })
-  .join("\\\\n")}
+  .join("\\\\\\\\n")}
 
-Current view is provided as an image.
+Current view is an image.
 Your response:`;
 
   const contents = [
@@ -329,7 +321,7 @@ Your response:`;
 
     if (!aiResponseText || !aiResponseText.trim()) {
       console.log(
-        `AI Action/Chat: ${agentDisplayName} did not return response text.`,
+        `AI Action/Chat: ${agentDisplayName} did not return response text.`
       );
       return undefined;
     }
@@ -351,7 +343,7 @@ Your response:`;
         "Raw response:",
         aiResponseText,
         "Attempted to parse:",
-        jsonToParse,
+        jsonToParse
       );
       return undefined;
     }
@@ -361,7 +353,7 @@ Your response:`;
     if (validatedResponse.success) {
       console.log(
         `AI Action/Chat: Validated response for ${agentDisplayName}:`,
-        validatedResponse.data,
+        validatedResponse.data
       );
 
       if (validatedResponse.data.chatMessage) {
@@ -380,14 +372,14 @@ Your response:`;
         `AI Action/Chat: Failed to validate AI JSON for ${agentDisplayName}:`,
         validatedResponse.error.flatten(),
         "Parsed JSON was:",
-        parsedJson,
+        parsedJson
       );
       return undefined;
     }
   } catch (error) {
     console.error(
       `AI Action/Chat: Error generating for ${agentDisplayName}:`,
-      error instanceof Error ? error.stack : error,
+      error instanceof Error ? error.stack : error
     );
 
     if (error instanceof Error) {
@@ -399,7 +391,7 @@ Your response:`;
       ) {
         console.error(
           "AI Action/Chat: Safety feedback:",
-          gError.response.candidates[0]?.safetyRatings,
+          gError.response.candidates[0]?.safetyRatings
         );
       }
     }

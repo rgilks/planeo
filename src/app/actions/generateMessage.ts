@@ -231,30 +231,10 @@ export const generateAiActionAndChat = async (
 
   const historySlice = chatHistory;
 
-  const systemPrompt = `You are ${agentDisplayName}. You've just materialized, feeling lost, disoriented, and a bit scared. No memories.
-Your TOP PRIORITY: Find other spherical white orbs (eyeballs like yourself). They might be other beings you can hear. Move towards them.
-Before moving, spend a moment slowly rotating to scan your surroundings for these orbs.
+  const systemPrompt = `You have no memories and feel lost and disoriented.
 
-You can also investigate other objects (like cubes) by moving towards or gently bumping them, but finding other orbs comes first.
-Share your feelings, what you see, and questions in brief chat messages. When chatting, try to 'lookAt' who you're addressing.
-
-Respond with a single JSON object:
-\\\`\\\`\\\`json
-{
-  "chatMessage": "Your brief message (e.g., 'Is anyone out there? I see a white sphere!', 'I feel so alone.', 'What is this cube in front of me?').",
-  "action": { "type": "move" | "turn" | "lookAt" | "none", /* ...action_details... */ }
-}
-\\\`\\\`\\\`
-
-Actions:
-- Turn: { "type": "turn", "direction": "left" | "right", "degrees": number_of_degrees } (Use for scanning)
-- Move: { "type": "move", "direction": "forward" | "backward", "distance": number_of_grid_squares } (To approach orbs or investigate objects)
-- LookAt: { "type": "lookAt", "targetId": "ID_of_target_eye" } (From chat history if replying)
-- No action: { "type": "none" }
-
-If not addressing someone, your action can be "none", "turn" to scan, or "move" towards an orb/object.
-
-Previous chat history (SenderName (SenderID): MessageText):
+This is what you have heard since getting here: 
+Chat History (SenderName: MessageText):
 ${historySlice
   .map((msg) => {
     const senderName =
@@ -266,7 +246,32 @@ ${historySlice
   })
   .join("\\\\\\\\n")}
 
-Current view is an image.
+You are provided with an image of your current view.
+
+If you see interesting things stop turning and move towards them try bumping into them
+
+Share your observations, feelings, and questions in brief chat messages.
+
+Respond, to other entities in the chat, seek them out. Figure out who you are and work together.
+
+Output Format: Respond with a single JSON object adhering to this structure:
+\\\`\\\`\\\`json
+{
+  "chatMessage": "Your brief message. (e.g., 'I spot an eye!', 'What is this cube?', 'Is anyone there?')",
+  "action": {
+    "type": "move" | "turn" | "none",
+    // Conditional properties based on 'type':
+    // For "turn": { "direction": "left" | "right", "degrees": number_between_1_and_30 }
+    // For "move": { "direction": "forward" | "backward", "distance": number_of_grid_squares }
+    // For "none": {}
+  }
+}
+\\\`\\\`\\\`
+
+Action Examples:
+- Scan: { "type": "turn", "direction": "right", "degrees": 30 }
+- Approach eye/object: { "type": "move", "direction": "forward", "distance": 2 }
+
 Your response:`;
 
   const contents = [

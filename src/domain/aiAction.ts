@@ -10,12 +10,7 @@ const MoveActionSchema = z.object({
 const TurnActionSchema = z.object({
   type: z.literal("turn"),
   direction: z.enum(["left", "right"]),
-  degrees: z.number().positive(),
-});
-
-const LookAtActionSchema = z.object({
-  type: z.literal("lookAt"),
-  targetId: z.string(),
+  degrees: z.number().min(1).max(30),
 });
 
 const NoActionSchema = z.object({
@@ -25,7 +20,6 @@ const NoActionSchema = z.object({
 export const AIActionSchema = z.union([
   MoveActionSchema,
   TurnActionSchema,
-  LookAtActionSchema,
   NoActionSchema,
   z.null(), // Allow null for no action
 ]);

@@ -19,8 +19,6 @@ AI agents can perform the following actions:
 
 - **Move**: `{ "type": "move", "direction": "forward" | "backward", "distance": number }`
 - **Turn**: `{ "type": "turn", "direction": "left" | "right", "degrees": number }`
-- **LookAt**: `{ "type": "lookAt", "targetId": "ID_of_another_eye" }`
-  - **Gaze Behavior**: When an AI generates a `chatMessage`, it is encouraged by the system prompt to also use the `lookAt` action to face the being it is addressing. The `targetId` is typically the `userId` of the recipient, found in the chat history. This creates a more natural interaction, allowing others to see the AI's "iris and pupil" when it's "talking."
 - **None**: `{ "type": "none" }` (no physical action)
 
 ### Prompt Engineering

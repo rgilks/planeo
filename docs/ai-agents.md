@@ -36,10 +36,6 @@ When an AI agent generates a chat message, the prompt history provided to the un
 
 Based on visual input and chat history, AI agents decide on both a chat message and a physical action. Possible actions include moving, turning, and looking at other entities.
 
-#### Gaze Interaction
-
-To enhance the sense of direct interaction, AI agents are encouraged to use a `lookAt` action when they generate a chat message. The system prompt guides them to target the `userId` of the being they are addressing (identifiable from the chat history). This means an AI will attempt to turn its "eye" towards you (or another AI) when it speaks to you, allowing its "iris and pupil" to be visible.
-
 ### Persona
 
 Currently, all AI agents share a general persona of having newly materialized in the environment, feeling disoriented and cautious. This is defined in the system prompt in `src/app/actions/generateMessage.ts`.

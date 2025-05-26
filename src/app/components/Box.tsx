@@ -39,9 +39,13 @@ const SyncedRigidBox: React.FC<SyncedRigidBoxProps> = ({ box }) => {
   const lastTransmittedORef = useRef<Vec3 | undefined>(undefined);
   const sendBoxUpdate = useEventStore((state) => state.sendBoxUpdate);
 
-  // Each box instance will select and store its own stable art URL on mount
   const [stableArtUrl] = useState(() => {
     return artImageUrls[Math.floor(Math.random() * artImageUrls.length)];
+  });
+
+  const [stableMaterialAttachName] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * 6);
+    return `material-${randomIndex}`;
   });
 
   useEffect(() => {
@@ -145,9 +149,27 @@ const SyncedRigidBox: React.FC<SyncedRigidBoxProps> = ({ box }) => {
     }
   });
 
-  // Call useTexture unconditionally with stableArtUrl
-  // stableArtUrl is guaranteed to be a string from useState initialization
   const texture = useTexture(stableArtUrl);
+
+  const materials = Array.from({ length: 6 }, (_, i) => {
+    const attachName = `material-${i}`;
+    if (attachName === stableMaterialAttachName && texture) {
+      return (
+        <meshStandardMaterial
+          key={attachName}
+          attach={attachName}
+          map={texture}
+        />
+      );
+    }
+    return (
+      <meshStandardMaterial
+        key={attachName}
+        attach={attachName}
+        color={new THREE.Color(box.c)}
+      />
+    );
+  });
 
   return (
     <RigidBody
@@ -160,29 +182,7 @@ const SyncedRigidBox: React.FC<SyncedRigidBoxProps> = ({ box }) => {
     >
       <Box args={[15, 15, 15]}>
         {texture ? (
-          <>
-            <meshStandardMaterial
-              attach="material-0"
-              color={new THREE.Color(box.c)}
-            />
-            <meshStandardMaterial
-              attach="material-1"
-              color={new THREE.Color(box.c)}
-            />
-            <meshStandardMaterial
-              attach="material-2"
-              color={new THREE.Color(box.c)}
-            />
-            <meshStandardMaterial
-              attach="material-3"
-              color={new THREE.Color(box.c)}
-            />
-            <meshStandardMaterial attach="material-4" map={texture} />
-            <meshStandardMaterial
-              attach="material-5"
-              color={new THREE.Color(box.c)}
-            />
-          </>
+          <>{materials}</>
         ) : (
           <meshStandardMaterial color={new THREE.Color(box.c)} />
         )}
@@ -205,8 +205,8 @@ export const ServerDrivenBoxes = () => {
 
   return (
     <>
-      {serverBoxesArray.map((box: AnimatedBoxState) => {
-        return <SyncedRigidBox key={box.id} box={box} />;
+      {serverBoxesArray.map((boxState: AnimatedBoxState) => {
+        return <SyncedRigidBox key={boxState.id} box={boxState} />;
       })}
       <RigidBody type="fixed" colliders="cuboid">
         <CuboidCollider

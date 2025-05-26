@@ -1,13 +1,13 @@
 "use client";
 
-import { Box } from "@react-three/drei";
+import { Box, useTexture } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import {
   CuboidCollider,
   RigidBody,
   type RapierRigidBody,
 } from "@react-three/rapier";
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import * as THREE from "three";
 
 import { type Vec3 } from "@/domain";
@@ -21,6 +21,14 @@ import { useEventStore } from "../../stores/eventStore";
 const POSITION_THRESHOLD = 0.1;
 const ROTATION_THRESHOLD = 0.05;
 
+// Predefined list of art image URLs from The Metropolitan Museum of Art Open Access
+const artImageUrls = [
+  "/art/image_1.jpg",
+  "/art/image_2.jpg",
+  "/art/image_3.jpg",
+  "/art/image_4.jpg",
+];
+
 interface SyncedRigidBoxProps {
   box: AnimatedBoxState;
 }
@@ -30,6 +38,11 @@ const SyncedRigidBox: React.FC<SyncedRigidBoxProps> = ({ box }) => {
   const lastTransmittedPRef = useRef<Vec3 | undefined>(undefined);
   const lastTransmittedORef = useRef<Vec3 | undefined>(undefined);
   const sendBoxUpdate = useEventStore((state) => state.sendBoxUpdate);
+
+  // Each box instance will select and store its own stable art URL on mount
+  const [stableArtUrl] = useState(() => {
+    return artImageUrls[Math.floor(Math.random() * artImageUrls.length)];
+  });
 
   useEffect(() => {
     lastTransmittedPRef.current = box.currentP.toArray();
@@ -132,6 +145,10 @@ const SyncedRigidBox: React.FC<SyncedRigidBoxProps> = ({ box }) => {
     }
   });
 
+  // Call useTexture unconditionally with stableArtUrl
+  // stableArtUrl is guaranteed to be a string from useState initialization
+  const texture = useTexture(stableArtUrl);
+
   return (
     <RigidBody
       ref={rigidBodyRef}
@@ -142,7 +159,33 @@ const SyncedRigidBox: React.FC<SyncedRigidBoxProps> = ({ box }) => {
       type="dynamic"
     >
       <Box args={[15, 15, 15]}>
-        <meshStandardMaterial color={new THREE.Color(box.c)} />
+        {texture ? (
+          <>
+            <meshStandardMaterial
+              attach="material-0"
+              color={new THREE.Color(box.c)}
+            />
+            <meshStandardMaterial
+              attach="material-1"
+              color={new THREE.Color(box.c)}
+            />
+            <meshStandardMaterial
+              attach="material-2"
+              color={new THREE.Color(box.c)}
+            />
+            <meshStandardMaterial
+              attach="material-3"
+              color={new THREE.Color(box.c)}
+            />
+            <meshStandardMaterial attach="material-4" map={texture} />
+            <meshStandardMaterial
+              attach="material-5"
+              color={new THREE.Color(box.c)}
+            />
+          </>
+        ) : (
+          <meshStandardMaterial color={new THREE.Color(box.c)} />
+        )}
       </Box>
     </RigidBody>
   );
@@ -162,9 +205,9 @@ export const ServerDrivenBoxes = () => {
 
   return (
     <>
-      {serverBoxesArray.map((box: AnimatedBoxState) => (
-        <SyncedRigidBox key={box.id} box={box} />
-      ))}
+      {serverBoxesArray.map((box: AnimatedBoxState) => {
+        return <SyncedRigidBox key={box.id} box={box} />;
+      })}
       <RigidBody type="fixed" colliders="cuboid">
         <CuboidCollider
           args={[1000, 0.1, 1000]}

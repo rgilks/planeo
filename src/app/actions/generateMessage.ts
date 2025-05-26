@@ -153,7 +153,7 @@ Output Format: Respond with a single JSON object adhering to this structure:
   "action": {
     "type": "move" | "turn" | "none",
     // Conditional properties based on 'type':
-    // For "turn": { "direction": "left" | "right", "degrees": number_between_1_and_45 }
+    // For "turn": { "direction": "left" | "right", "degrees": number_between_30_and_45 }
     // For "move": { "direction": "forward" | "backward", "distance": number_of_grid_squares }
     // For "none": {}
   }
@@ -161,7 +161,7 @@ Output Format: Respond with a single JSON object adhering to this structure:
 \\\`\\\`\\\`
 
 Action Examples:
-- Scan: { "type": "turn", "direction": "right", "degrees": 30 }
+- Scan: { "type": "turn", "direction": "right", "degrees": 34 }
 - Approach eye/object: { "type": "move", "direction": "forward", "distance": 2 }
 
 Your response:`;

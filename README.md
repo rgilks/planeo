@@ -19,6 +19,7 @@ Planeo is an interactive 3D web application where users and AI agents coexist an
 - **Text-to-Speech (TTS):** Chat messages from AI agents can be spoken aloud. Currently, this uses a test audio track for development. A full Google Cloud TTS integration is prototyped. ([Details](/docs/text-to-speech.md), `src/lib/audioService.ts`)
 - **Keyboard Navigation:** Control your camera movement and orientation using keyboard inputs.
 - **Physics-based World:** Interact with objects like falling cubes in an environment governed by physics. ([Details](/docs/physics.md))
+- **Randomized Cube Art:** Falling cubes display random artwork from a local collection on one face. ([Details](/docs/cube-art-textures.md))
 
 ## Simulation Start
 
@@ -120,6 +121,7 @@ More detailed technical documentation for various aspects of the project can be 
 - `docs/sse-event-handling.md`: Describes the Server-Sent Events (SSE) mechanism for real-time updates.
 - `docs/text-to-speech.md`: Information on the text-to-speech functionality (currently using test audio, with details on the planned full integration).
 - `docs/ai-interaction-flow.md`: Details the synchronized flow of AI actions, chat, and audio playback.
+- `docs/cube-art-textures.md`: Details on how artwork is displayed on interactive cubes.
 
 ## Planned Features
 

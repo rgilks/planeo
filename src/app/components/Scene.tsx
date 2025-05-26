@@ -52,12 +52,12 @@ const CanvasContent = ({ myId, myName }: { myId: string; myName?: string }) => {
   const targetRotation = useRef(0);
   const currentRotationSpeed = useRef(0);
 
-  const moveSpeed = 4.0;
-  const rotationSpeedFactor = 0.25;
-  const acceleration = 0.1;
-  const dampingFactor = 0.85;
-  const rotationDampingFactor = 0.8;
-  const stopThreshold = 0.01;
+  const moveSpeed = 12.0;
+  const rotationSpeedFactor = 0.5;
+  const acceleration = 0.05;
+  const dampingFactor = 0.9;
+  const rotationDampingFactor = 0.85;
+  const stopThreshold = 0.005;
 
   const captureCanvas = async () => {
     const image = gl.domElement.toDataURL("image/png");

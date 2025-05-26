@@ -128,21 +128,18 @@ export async function callAIForStory(
   return text;
 }
 
-export const generatMessagesAction = async () => {};
-
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
   aiUserId: string,
 ): Promise<Message | undefined> => {
   console.log(`[AI Action] Generating AI Chat Message for ${aiUserId}...`);
-  const agent = getAIAgentById(aiUserId); // Get agent details
-  const agentName = agent?.displayName || aiUserId; // Use displayName or fallback to ID
+  const agent = getAIAgentById(aiUserId);
+  const agentName = agent?.displayName || aiUserId;
 
   const historySlice = chatHistory.slice(-5);
   const prompt =
     historySlice
       .map((msg) => {
-        // Use msg.name if available, otherwise use logic to determine sender
         const senderName =
           msg.name ||
           (isAIAgentId(msg.userId)
@@ -150,7 +147,7 @@ export const generateAiChatMessage = async (
             : "User");
         return `${senderName}: ${msg.text}`;
       })
-      .join("\\n") + `\\n${agentName}:`; // Use agentName for the current AI
+      .join("\\\\n") + `\\\\n${agentName}:`;
 
   try {
     const aiResponseText = await callAIForStory(prompt);
@@ -159,7 +156,7 @@ export const generateAiChatMessage = async (
       const aiMessage: Message = {
         id: uuidv4(),
         userId: aiUserId,
-        name: agentName, // Add agentName to the message
+        name: agentName,
         text: aiResponseText.trim(),
         timestamp: Date.now(),
       };
@@ -277,9 +274,9 @@ ${historySlice
       (isAIAgentId(msg.userId)
         ? getAIAgentById(msg.userId)?.displayName || "AI"
         : "User");
-    return `${senderName} (${msg.userId}): ${msg.text}`; // Added (SenderID) here
+    return `${senderName} (${msg.userId}): ${msg.text}`;
   })
-  .join("\\n")}
+  .join("\\\\n")}
 
 Current view is provided as an image.
 Your response:`;
@@ -349,14 +346,13 @@ Your response:`;
       if (jsonToParse.startsWith("```json") && jsonToParse.endsWith("```")) {
         jsonToParse = jsonToParse.substring(7, jsonToParse.length - 3).trim();
         console.log(
-          `[AI Action & Chat Service] Extracted JSON from markdown (\\\`\\\`\\\`json) for ${agentDisplayName}:`,
+          `[AI Action & Chat Service] Extracted JSON from markdown (\`\`\`json) for ${agentDisplayName}:`,
           jsonToParse,
         );
       } else if (jsonToParse.startsWith("```") && jsonToParse.endsWith("```")) {
-        // Fallback for cases where 'json' language specifier might be missing or different
         jsonToParse = jsonToParse.substring(3, jsonToParse.length - 3).trim();
         console.log(
-          `[AI Action & Chat Service] Extracted JSON from markdown (\\\`\\\`\\\`) for ${agentDisplayName}:`,
+          `[AI Action & Chat Service] Extracted JSON from markdown (\`\`\`) for ${agentDisplayName}:`,
           jsonToParse,
         );
       }
@@ -412,7 +408,7 @@ Your response:`;
           );
           // Attempt to provide a default "no action" if parsing fails badly
           // Also send a fallback chat message if validation fails but we have a chat string
-          let fallbackChatMessage = "I\'m a bit confused.";
+          let fallbackChatMessage = "I'm a bit confused.";
           if (
             typeof parsedJson?.chatMessage === "string" &&
             parsedJson.chatMessage.trim() !== ""
@@ -479,7 +475,7 @@ Your response:`;
       id: uuidv4(),
       userId: aiAgentId,
       name: agentDisplayName,
-      text: "I\'m speechless.",
+      text: "I'm speechless.",
       timestamp: Date.now(),
     };
     const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
@@ -493,7 +489,7 @@ Your response:`;
         }),
       }).catch(console.error);
     }
-    return { chatMessage: "I\'m speechless.", action: { type: "none" } };
+    return { chatMessage: "I'm speechless.", action: { type: "none" } };
   } catch (error) {
     console.error(
       `[AI Action & Chat Service] Error generating AI action/chat for ${agentDisplayName}:`,

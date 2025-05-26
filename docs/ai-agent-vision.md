@@ -17,9 +17,9 @@ AI agents in Planeo, such as Orion and Nova, have their own virtual cameras with
 
 - **State Management**: The generated image data URL for each AI agent (from the frequent visual updates) is stored in a Zustand store (`useAIVisionStore` in `src/stores/aiVisionStore.ts`) using the `setAIAgentView` action.
 
-- **Display Components**:
-  - The `AIAgentViews` component (`src/app/components/AIAgentViews.tsx`) and `AIVisionDisplay` component (`src/components/AIVisionDisplay.tsx`) subscribe to the `useAIVisionStore`.
-  - When the image data URL for an agent updates in the store, these components re-render, displaying the new image in the top-left and top-right corners of the screen.
+- **Display Component**:
+  - The `AIAgentViews` component (`src/app/components/AIAgentViews.tsx`) subscribes to the `useAIVisionStore`.
+  - When the image data URL for an agent updates in the store, this component re-renders, displaying the new image in the top-left and top-right corners of the screen.
   - The images are displayed at a resolution of 160x100 pixels, scaled down from the capture resolution of 320x200 pixels.
 
 ## Real-time Experience
@@ -31,4 +31,3 @@ This ensures that the views displayed are an accurate representation of what eac
 ## Future Considerations
 
 - **Performance**: Very frequent updates (e.g., 30-60 FPS) could impact performance, especially with multiple AI agents. The current interval is a balance between real-time feel and resource usage.
-- **Component Consolidation**: The `AIAgentViews.tsx` and `AIVisionDisplay.tsx` components have overlapping functionality and could potentially be consolidated in the future.

@@ -48,8 +48,17 @@ const CanvasContent = ({ myId, myName }: { myId: string; myName?: string }) => {
   const messages = useMessageStore((s) => s.messages);
   const lastCaptureTimeRef = useRef<number>(0); // Throttle capture
 
-  const zoomSpeed = 0.5;
-  const rotationSpeed = 0.03;
+  const targetVelocity = useRef(new Vector3());
+  const currentVelocity = useRef(new Vector3());
+  const targetRotation = useRef(0);
+  const currentRotationSpeed = useRef(0);
+
+  const moveSpeed = 4.0;
+  const rotationSpeedFactor = 0.25;
+  const acceleration = 0.1;
+  const dampingFactor = 0.85;
+  const rotationDampingFactor = 0.8;
+  const stopThreshold = 0.01;
 
   const captureCanvas = async () => {
     const image = gl.domElement.toDataURL("image/png");
@@ -86,43 +95,97 @@ const CanvasContent = ({ myId, myName }: { myId: string; myName?: string }) => {
     camera.rotation.set(0, camera.rotation.y, 0, "YXZ");
   }, [camera]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const direction = new Vector3();
     camera.getWorldDirection(direction);
+    direction.y = 0;
+    direction.normalize();
 
-    let didMove = false;
-    let didRotate = false;
+    const right = new Vector3()
+      .crossVectors(new Vector3(0, 1, 0), direction)
+      .normalize();
+
+    targetVelocity.current.set(0, 0, 0);
+    targetRotation.current = 0;
+
+    let didInput = false;
 
     if (!isChatInputFocused) {
-      if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
-        camera.rotation.y += rotationSpeed;
-        didRotate = true;
-      }
-      if (keyboard.current["d"] || keyboard.current["arrowright"]) {
-        camera.rotation.y -= rotationSpeed;
-        didRotate = true;
-      }
-
-      if (didRotate) {
-        camera.rotation.x = 0;
-        camera.rotation.z = 0;
-      }
-
       if (keyboard.current["w"] || keyboard.current["arrowup"]) {
-        camera.position.addScaledVector(direction, zoomSpeed);
-        didMove = true;
+        targetVelocity.current.add(
+          new Vector3().copy(direction).multiplyScalar(moveSpeed),
+        );
+        didInput = true;
       }
       if (keyboard.current["s"] || keyboard.current["arrowdown"]) {
-        camera.position.addScaledVector(direction, -zoomSpeed);
-        didMove = true;
+        targetVelocity.current.add(
+          new Vector3().copy(direction).multiplyScalar(-moveSpeed),
+        );
+        didInput = true;
       }
+      if (keyboard.current["q"]) {
+        targetVelocity.current.add(
+          new Vector3().copy(right).multiplyScalar(moveSpeed),
+        );
+        didInput = true;
+      }
+      if (keyboard.current["e"]) {
+        targetVelocity.current.add(
+          new Vector3().copy(right).multiplyScalar(-moveSpeed),
+        );
+        didInput = true;
+      }
+
+      if (keyboard.current["a"] || keyboard.current["arrowleft"]) {
+        targetRotation.current += rotationSpeedFactor;
+        didInput = true;
+      }
+      if (keyboard.current["d"] || keyboard.current["arrowright"]) {
+        targetRotation.current -= rotationSpeedFactor;
+        didInput = true;
+      }
+    }
+
+    currentVelocity.current.lerp(targetVelocity.current, acceleration);
+
+    if (!didInput) {
+      currentVelocity.current.multiplyScalar(dampingFactor);
+      if (currentVelocity.current.lengthSq() < stopThreshold * stopThreshold) {
+        currentVelocity.current.set(0, 0, 0);
+      }
+    }
+
+    currentRotationSpeed.current =
+      currentRotationSpeed.current * (1 - rotationDampingFactor) +
+      targetRotation.current * rotationDampingFactor;
+    if (
+      Math.abs(currentRotationSpeed.current) < stopThreshold &&
+      targetRotation.current === 0
+    ) {
+      currentRotationSpeed.current = 0;
+    }
+
+    const clampedDelta = Math.min(delta, 0.1);
+
+    if (currentVelocity.current.lengthSq() > 0) {
+      camera.position.addScaledVector(currentVelocity.current, clampedDelta);
+    }
+
+    if (Math.abs(currentRotationSpeed.current) > 0) {
+      camera.rotation.y += currentRotationSpeed.current * clampedDelta;
+      camera.rotation.x = 0;
+      camera.rotation.z = 0;
     }
 
     if (camera.position.y !== EYE_Y_POSITION) {
       camera.position.y = EYE_Y_POSITION;
     }
 
-    if (didMove || didRotate) {
+    const didMoveOrRotate =
+      currentVelocity.current.lengthSq() > 0.0001 ||
+      Math.abs(currentRotationSpeed.current) > 0.0001;
+
+    if (didMoveOrRotate) {
       const now = Date.now();
       if (now - lastCaptureTimeRef.current > CAPTURE_INTERVAL_MS) {
         setTimeout(() => captureCanvas(), 0);

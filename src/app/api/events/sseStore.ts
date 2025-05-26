@@ -6,7 +6,6 @@ import {
 } from "@/domain";
 import { env } from "@/lib/env";
 
-
 type Writer = { write: (data: string) => void; closed: boolean };
 
 const eyes = new Map<string, EventEyeUpdateType>();

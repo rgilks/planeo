@@ -10,7 +10,7 @@ const MoveActionSchema = z.object({
 const TurnActionSchema = z.object({
   type: z.literal("turn"),
   direction: z.enum(["left", "right"]),
-  degrees: z.number().min(1).max(30),
+  degrees: z.number().min(1).max(45),
 });
 
 const NoActionSchema = z.object({

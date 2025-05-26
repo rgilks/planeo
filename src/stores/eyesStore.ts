@@ -242,6 +242,7 @@ export const useEyesStore = create<EyesState & EyesActions>()(
           }
           eye.targetPosition.copy(targetPosition);
           eye.targetLookAt.copy(targetLookAt);
+          eye.conversationalTargetId = undefined; // Clear conversational target
         }
       }),
   })),

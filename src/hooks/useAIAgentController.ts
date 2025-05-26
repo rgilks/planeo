@@ -21,7 +21,7 @@ import type { EyeUpdateType, Vec3 as DomainVec3 } from "@/domain";
 import type { AIAction } from "@/domain/aiAction";
 
 const VISUAL_UPDATE_INTERVAL_MS = 100; // For smoother view updates (~10 FPS)
-const DECISION_MAKING_INTERVAL_MS = 7000; // How often each AI thinks (LLM call)
+const DECISION_MAKING_INTERVAL_MS = 500; // How often each AI thinks (LLM call)
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 200;
 const MOVEMENT_DISTANCE_MULTIPLIER = 10; // New multiplier

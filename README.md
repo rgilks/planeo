@@ -28,6 +28,7 @@ The following features are planned for future development:
 - **AI Services:** Potential integration with Google Cloud Text-to-Speech and Google GenAI.
 - **Authentication:** User authentication via NextAuth.
 - **Database Integration:** Utilizing a local SQLite database via better-sqlite3 for persistent data storage.
+- **Enhanced AI Agent View Updates:** AI agent views (Orion and Nova) now update visually much more frequently (~10 FPS), while their decision-making (LLM invocation) rate remains controlled to optimize performance and cost.
 
 ## Technical Documentation
 

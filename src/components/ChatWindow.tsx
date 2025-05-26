@@ -1,7 +1,5 @@
 "use client";
 
-import { nanoid } from "nanoid";
-
 import { type ChatMessageEventType } from "@/domain/event";
 import { useEventStore } from "@/stores/eventStore";
 import { useMessageStore } from "@/stores/messageStore";
@@ -20,7 +18,7 @@ export const ChatWindow = ({ myId }: ChatWindowProps) => {
 
   const handleSendMessage = (text: string) => {
     const newMessage: ChatMessageEventType = {
-      id: nanoid(),
+      id: crypto.randomUUID(),
       userId: myId,
       name: "User",
       text,

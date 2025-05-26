@@ -24,12 +24,14 @@ const VISUAL_UPDATE_INTERVAL_MS = 100; // For smoother view updates (~10 FPS)
 const DECISION_MAKING_INTERVAL_MS = 7000; // How often each AI thinks (LLM call)
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 200;
+const MOVEMENT_DISTANCE_MULTIPLIER = 10; // New multiplier
 
 export const useAIAgentController = (myId: string) => {
   const { gl, scene: mainScene } = useThree();
   const agents = getAIAgents();
   const getMessages = useMessageStore((s) => s.messages);
   const managedEyes = useEyesStore((s) => s.managedEyes);
+  const updateAIAgentTarget = useEyesStore((s) => s.updateAIAgentTarget);
   const setAIAgentView = useAIVisionStore((s) => s.setAIAgentView);
 
   const aiCameraRefs = useRef<Record<string, PerspectiveCamera>>({});
@@ -201,7 +203,7 @@ export const useAIAgentController = (myId: string) => {
                 actualMoveDirection.negate();
               }
               const displacement = actualMoveDirection.multiplyScalar(
-                movementAction.distance,
+                movementAction.distance * MOVEMENT_DISTANCE_MULTIPLIER,
               );
 
               newPosition.copy(currentPosition).add(displacement);
@@ -223,6 +225,8 @@ export const useAIAgentController = (myId: string) => {
               newLookAt.addVectors(currentPosition, directionToLookAt);
               newPosition = currentPosition;
             }
+
+            updateAIAgentTarget(agentId, newPosition, newLookAt);
 
             const eyeUpdatePayload: EyeUpdateType = {
               type: "eyeUpdate",
@@ -274,6 +278,7 @@ export const useAIAgentController = (myId: string) => {
       extractImageDataFromRenderer,
       getMessages,
       managedEyes,
+      updateAIAgentTarget,
       // requestAiDecision is a server action, typically stable
     ],
   );

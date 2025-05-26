@@ -110,13 +110,13 @@ export const POST = async (req: NextRequest) => {
       payloadForLogging.imageDataUrl = "[imageDataUrl removed for brevity]";
     }
 
-    console.log(
-      "POST /api/events - Received payload:",
-      JSON.stringify(payloadForLogging),
-    );
+    // console.log(
+    //   "POST /api/events - Received payload:",
+    //   JSON.stringify(payloadForLogging),
+    // );
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    console.error("POST /api/events - Invalid JSON payload:", error.message);
+    // console.error("POST /api/events - Invalid JSON payload:", error.message);
     return NextResponse.json(
       { error: "Invalid JSON payload", details: error.message },
       { status: 400 },

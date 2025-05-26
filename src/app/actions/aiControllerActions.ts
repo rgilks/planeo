@@ -17,21 +17,13 @@ export const requestAiDecision = async (
   aiAgentId: string,
   imageDataUrl: string,
   chatHistory: ChatHistory,
-  actionHistory: ActionHistory
+  actionHistory: ActionHistory,
 ): Promise<ParsedAIResponse["action"]> => {
-  console.log(
-    `[AI Controller Action] Requesting decision for agent ${aiAgentId}`
-  );
-  console.log(
-    `[AI Controller Action] actionHistory before calling generateAiActionAndChat:`,
-    JSON.stringify(actionHistory)
-  );
-
   const decision = await generateAiActionAndChat(
     aiAgentId,
     imageDataUrl,
     chatHistory,
-    actionHistory
+    actionHistory,
   );
 
   if (decision) {
@@ -39,7 +31,7 @@ export const requestAiDecision = async (
   }
 
   console.warn(
-    `[AI Controller Action] No decision returned from LLM for agent ${aiAgentId}. Returning no action.`
+    `[AI Controller Action] No decision returned from LLM for agent ${aiAgentId}. Returning no action.`,
   );
   return { type: "none" }; // Default to no action if something went wrong
 };

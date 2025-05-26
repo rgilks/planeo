@@ -126,15 +126,9 @@ export async function callAIForStory(
     safetySettings,
   };
 
-  console.log(`AI Story: Calling model ${request.model} for story.`);
   const result = await genAI.models.generateContent(request);
   const text = result.text;
 
-  if (text) {
-    console.log("AI Story: Received response.");
-  } else {
-    console.log("AI Story: No response text received.");
-  }
   return text;
 }
 
@@ -144,7 +138,6 @@ export const generateAiChatMessage = async (
 ): Promise<Message | undefined> => {
   const agent = getAIAgentById(aiUserId);
   const agentName = agent?.displayName || aiUserId;
-  console.log(`AI Chat: Generating message for ${agentName}`);
 
   const historySlice = chatHistory;
   const prompt =
@@ -170,10 +163,6 @@ export const generateAiChatMessage = async (
         text: aiResponseText.trim(),
         timestamp: Date.now(),
       };
-      console.log(
-        `AI Chat: Generated message for ${agentName}`,
-        aiMessage.text,
-      );
       postChatMessageToEvents(aiMessage);
       return aiMessage;
     }
@@ -201,9 +190,6 @@ export const generateAiActionAndChat = async (
 ): Promise<ParsedAIResponse | undefined> => {
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
-  console.log(
-    `AI Action/Chat: Generating for ${agentDisplayName} with action history length ${actionHistory.length}`,
-  );
 
   const genAI: GoogleGenAI = await getGoogleAIClient();
   const visionModelConfig = await getActiveVisionModel();
@@ -218,17 +204,11 @@ export const generateAiActionAndChat = async (
     const debugImagesDir = path.join(process.cwd(), "debug_images");
     if (!fs.existsSync(debugImagesDir)) {
       fs.mkdirSync(debugImagesDir, { recursive: true });
-      console.log(
-        `AI Action/Chat: Created debug_images directory: ${debugImagesDir}`,
-      );
     }
     const imageName = `${aiAgentId}_${Date.now()}.png`;
     const imagePath = path.join(debugImagesDir, imageName);
     const imageBuffer = Buffer.from(base64ImageData, "base64");
     fs.writeFileSync(imagePath, imageBuffer);
-    console.log(
-      `AI Action/Chat: Saved debug image for ${agentDisplayName} to ${imagePath}`,
-    );
   } catch (error) {
     console.error(
       `AI Action/Chat: Failed to save debug image for ${agentDisplayName}:`,
@@ -350,23 +330,10 @@ Your response:`;
   };
 
   try {
-    // Log the prompt details before calling the AI
-    const promptText = contents[0]?.parts[1]?.text;
-    const imageDataLength =
-      contents[0]?.parts[0]?.inlineData?.data?.length || 0;
-    console.log(
-      `AI Action/Chat: Calling Vision AI for ${agentDisplayName}. Image data length: ${imageDataLength}. Prompt:`,
-      promptText,
-    );
-
-    console.log(`AI Action/Chat: Calling Vision AI for ${agentDisplayName}`);
     const result = await genAI.models.generateContent(request);
     const aiResponseText = result.text;
 
     if (!aiResponseText || !aiResponseText.trim()) {
-      console.log(
-        `AI Action/Chat: ${agentDisplayName} did not return response text.`,
-      );
       return undefined;
     }
 

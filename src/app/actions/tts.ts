@@ -79,10 +79,6 @@ async function performSynthesis(
       },
     };
 
-    console.log(
-      `[TTS Core] Requesting synthesis with voice: ${voiceName}, lang: ${languageCode}`,
-    );
-
     const [response] = await ttsClient.synthesizeSpeech(request);
 
     if (!response.audioContent) {
@@ -93,7 +89,6 @@ async function performSynthesis(
     const audioBase64 = Buffer.from(
       response.audioContent as Uint8Array,
     ).toString("base64");
-    console.log("[TTS Core] Synthesis successful.");
     return { audioBase64: audioBase64 };
   } catch (error) {
     console.error("[TTS Core] Google Cloud TTS Error:", error);
@@ -108,9 +103,6 @@ export const synthesizeSpeechAction = async (
 ): Promise<SynthesizeSpeechResult> => {
   const ttsEnabled = process.env["NEXT_PUBLIC_TTS_ENABLED"] !== "false";
   if (!ttsEnabled) {
-    console.log(
-      "[TTS Action] TTS is disabled via NEXT_PUBLIC_TTS_ENABLED. Skipping synthesis.",
-    );
     return { audioBase64: "", error: "TTS is disabled." }; // Return empty audio or a specific indicator
   }
 

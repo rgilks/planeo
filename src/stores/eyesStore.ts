@@ -27,6 +27,11 @@ type EyesActions = {
   updateEyeAnimations: (delta: number) => void;
   removeEye: (id: string) => void;
   setManyManagedEyes: (newEyes: Record<string, EyeState>) => void;
+  updateAIAgentTarget: (
+    agentId: string,
+    targetPosition: Vector3,
+    targetLookAt: Vector3,
+  ) => void;
 };
 
 export type { EyeState as ManagedEye };
@@ -223,6 +228,21 @@ export const useEyesStore = create<EyesState & EyesActions>()(
     setManyManagedEyes: (newEyes) =>
       set((state) => {
         state.managedEyes = newEyes;
+      }),
+
+    updateAIAgentTarget: (agentId, targetPosition, targetLookAt) =>
+      set((state) => {
+        const eye = state.managedEyes[agentId];
+        if (eye) {
+          if (!eye.targetPosition || !(eye.targetPosition instanceof Vector3)) {
+            eye.targetPosition = new Vector3();
+          }
+          if (!eye.targetLookAt || !(eye.targetLookAt instanceof Vector3)) {
+            eye.targetLookAt = new Vector3();
+          }
+          eye.targetPosition.copy(targetPosition);
+          eye.targetLookAt.copy(targetLookAt);
+        }
       }),
   })),
 );

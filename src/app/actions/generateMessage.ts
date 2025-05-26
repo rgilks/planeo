@@ -27,7 +27,7 @@ const postChatMessageToEvents = (message: Message): void => {
   const appUrl = process.env["NEXT_PUBLIC_APP_URL"];
   if (!appUrl) {
     console.error(
-      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message."
+      "EventService: NEXT_PUBLIC_APP_URL is not defined. Cannot post message.",
     );
     return;
   }
@@ -79,14 +79,14 @@ export type AIConfigOverrides = Partial<GenerationConfig>;
 
 export async function callAIForStory(
   prompt: string,
-  configOverrides?: AIConfigOverrides
+  configOverrides?: AIConfigOverrides,
 ): Promise<string | undefined> {
   const genAI: GoogleGenAI = await getGoogleAIClient();
 
   const baseConfig: GenerationConfig = {
-    temperature: 1.0,
-    topP: 0.95,
-    topK: 40,
+    temperature: 0.5,
+    topP: 0.8,
+    topK: 30,
     frequencyPenalty: 0.3,
     presencePenalty: 0.6,
     candidateCount: 1,
@@ -114,7 +114,7 @@ export async function callAIForStory(
 
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
-  aiUserId: string
+  aiUserId: string,
 ): Promise<Message | undefined> => {
   const agent = getAIAgentById(aiUserId);
   const agentName = agent?.displayName || aiUserId;
@@ -151,7 +151,7 @@ export const generateAiChatMessage = async (
   } catch (error) {
     console.error(
       `AI Chat: Error generating message for ${agentName}:`,
-      error instanceof Error ? error.stack : error
+      error instanceof Error ? error.stack : error,
     );
     return undefined;
   }
@@ -164,7 +164,7 @@ export type AgentAction = ParsedAIResponse["action"];
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
-  chatHistory: ChatHistory
+  chatHistory: ChatHistory,
 ): Promise<ParsedAIResponse | undefined> => {
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
@@ -190,7 +190,7 @@ export const generateAiActionAndChat = async (
   } catch (error) {
     console.error(
       `AI Action/Chat: Failed to save debug image for ${agentDisplayName}:`,
-      error
+      error,
     );
   }
 
@@ -270,9 +270,9 @@ Your response:`;
   ];
 
   const generationConfig: GenerationConfig = {
-    temperature: 0.7,
-    topP: 0.9,
-    topK: 30,
+    temperature: 0.4,
+    topP: 0.7,
+    topK: 20,
     candidateCount: 1,
     maxOutputTokens: 150,
     responseMimeType: "application/json",
@@ -306,8 +306,8 @@ Your response:`;
         ],
       },
       null,
-      2
-    )
+      2,
+    ),
   );
 
   try {
@@ -316,7 +316,7 @@ Your response:`;
 
     console.log(
       `AI Action/Chat Raw Response for ${agentDisplayName}:`,
-      aiResponseText
+      aiResponseText,
     );
 
     if (!aiResponseText || !aiResponseText.trim()) {
@@ -340,7 +340,7 @@ Your response:`;
         "Raw response:",
         aiResponseText,
         "Attempted to parse:",
-        jsonToParse
+        jsonToParse,
       );
       return undefined;
     }
@@ -350,7 +350,7 @@ Your response:`;
     if (validatedResponse.success) {
       console.log(
         `AI Action/Chat: Validated response for ${agentDisplayName}:`,
-        validatedResponse.data
+        validatedResponse.data,
       );
 
       if (validatedResponse.data.chatMessage) {
@@ -369,14 +369,14 @@ Your response:`;
         `AI Action/Chat: Failed to validate AI JSON for ${agentDisplayName}:`,
         validatedResponse.error.flatten(),
         "Parsed JSON was:",
-        parsedJson
+        parsedJson,
       );
       return undefined;
     }
   } catch (error) {
     console.error(
       `AI Action/Chat: Error generating for ${agentDisplayName}:`,
-      error instanceof Error ? error.stack : error
+      error instanceof Error ? error.stack : error,
     );
 
     if (error instanceof Error) {
@@ -388,7 +388,7 @@ Your response:`;
       ) {
         console.error(
           "AI Action/Chat: Safety feedback:",
-          gError.response.candidates[0]?.safetyRatings
+          gError.response.candidates[0]?.safetyRatings,
         );
       }
     }

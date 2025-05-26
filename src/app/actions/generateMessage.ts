@@ -3,23 +3,19 @@
 import fs from "fs";
 import path from "path";
 
-import { GoogleGenAI, GenerationConfig } from "@google/genai";
+import { GenerationConfig } from "@google/genai";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+
 
 import { AIResponseSchema, type ParsedAIResponse } from "@/domain/aiAction";
 import { isAIAgentId, getAIAgentById } from "@/domain/aiAgent";
 import { Message, MessageSchema } from "@/domain/message";
-
-let genAIClient: GoogleGenAI | null = null;
-
-interface GoogleAIError extends Error {
-  response?: {
-    candidates?: Array<{
-      safetyRatings?: Array<Record<string, unknown>>;
-    }>;
-  };
-}
+import {
+  getGoogleAIClient,
+  getActiveVisionModel,
+  generateTextCompletion,
+} from "@/lib/googleAI";
 
 export type ChatHistory = z.infer<typeof MessageSchema>[];
 
@@ -40,77 +36,6 @@ const postChatMessageToEvents = (message: Message): void => {
     console.error("EventService: Fetch to /api/events failed:", fetchError);
   });
 };
-
-export const getGoogleAIClient = async (): Promise<GoogleGenAI> => {
-  if (genAIClient) {
-    return genAIClient;
-  }
-
-  const apiKey = process.env["GOOGLE_AI_API_KEY"]!;
-
-  try {
-    genAIClient = new GoogleGenAI({ apiKey });
-    return genAIClient;
-  } catch (error) {
-    console.error("GoogleAI: Failed to initialize client:", error);
-    throw error;
-  }
-};
-
-export const getActiveModel = async () => {
-  return {
-    provider: "google",
-    name: "gemini-2.0-flash-lite",
-    displayName: "Gemini 2.0 Flash-Lite",
-    maxTokens: 500,
-  };
-};
-
-export const getActiveVisionModel = async () => {
-  return {
-    provider: "google",
-    name: "gemini-1.5-flash-latest",
-    displayName: "Gemini 1.5 Flash",
-    maxTokens: 500,
-  };
-};
-
-export type AIConfigOverrides = Partial<GenerationConfig>;
-
-export async function callAIForStory(
-  prompt: string,
-  configOverrides?: AIConfigOverrides,
-): Promise<string | undefined> {
-  const genAI: GoogleGenAI = await getGoogleAIClient();
-
-  const baseConfig: GenerationConfig = {
-    temperature: 0.5,
-    topP: 0.8,
-    topK: 30,
-    frequencyPenalty: 0.3,
-    presencePenalty: 0.6,
-    candidateCount: 1,
-    maxOutputTokens: 150,
-  };
-
-  const generationConfig = { ...baseConfig, ...configOverrides };
-
-  const request = {
-    model: "gemini-2.0-flash-lite",
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig,
-    safetySettings: [],
-  };
-
-  console.log("AI Story Prompt:", JSON.stringify(request, null, 2));
-
-  const result = await genAI.models.generateContent(request);
-  const text = result.text;
-
-  console.log("AI Story Response:", text);
-
-  return text;
-}
 
 export const generateAiChatMessage = async (
   chatHistory: ChatHistory,
@@ -133,7 +58,7 @@ export const generateAiChatMessage = async (
       .join("\n") + `\n${agentName}:`;
 
   try {
-    const aiResponseText = await callAIForStory(prompt);
+    const aiResponseText = await generateTextCompletion(prompt);
 
     if (aiResponseText && aiResponseText.trim()) {
       const aiMessage: Message = {
@@ -157,10 +82,8 @@ export const generateAiChatMessage = async (
   }
 };
 
-// Define types for action history
 export type AgentAction = ParsedAIResponse["action"];
 
-// This function replaces the old generateAiVisionResponse
 export const generateAiActionAndChat = async (
   aiAgentId: string,
   imageDataUrl: string,
@@ -169,7 +92,7 @@ export const generateAiActionAndChat = async (
   const agent = getAIAgentById(aiAgentId);
   const agentDisplayName = agent?.displayName || aiAgentId;
 
-  const genAI: GoogleGenAI = await getGoogleAIClient();
+  const genAI = await getGoogleAIClient();
   const visionModelConfig = await getActiveVisionModel();
 
   const base64ImageData = imageDataUrl.split(",")[1];
@@ -195,24 +118,6 @@ export const generateAiActionAndChat = async (
   }
 
   const historySlice = chatHistory;
-
-  /* // Removed unused function
-  const formatActionForPrompt = (action: AgentAction): string => {
-    if (!action) {
-      return "- An unknown previous action."; 
-    }
-    switch (action.type) {
-      case "none":
-        return "- Previously, you chose to pause and observe.";
-      case "move":
-        return `- Previously, you moved ${action.direction} ${action.distance} grid square(s).`;
-      case "turn":
-        return `- Previously, you turned ${action.direction} ${action.degrees} degrees.`;
-      default:
-        return `- Previously, you performed an uncharacterised action: ${JSON.stringify(action)}`;
-    }
-  };
-  */
 
   const systemPrompt = `You awaken with no prior memories of who you are or how you got here. You feel lost, disoriented, scared and freaking out. You are now trying to make sense of your surroundings and remember what you\'ve done recently. Imagine being someone in this situation and act and speak accordingly.
 
@@ -322,6 +227,9 @@ Your response:`;
     );
 
     if (!aiResponseText || !aiResponseText.trim()) {
+      console.warn(
+        `AI Action/Chat: No response or empty response for ${agentDisplayName}`,
+      );
       return undefined;
     }
 
@@ -377,12 +285,14 @@ Your response:`;
     }
   } catch (error) {
     console.error(
-      `AI Action/Chat: Error generating for ${agentDisplayName}:`,
+      `AI Action/Chat: Error generating content for ${agentDisplayName}:`,
       error instanceof Error ? error.stack : error,
     );
 
     if (error instanceof Error) {
-      const gError = error as GoogleAIError;
+      const gError = error as {
+        response?: { candidates?: Array<{ safetyRatings?: unknown }> };
+      };
       if (
         gError.response?.candidates &&
         gError.response.candidates.length > 0 &&

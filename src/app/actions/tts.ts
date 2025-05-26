@@ -3,7 +3,79 @@
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { z } from "zod";
 
-import { initializeTTSClient } from "./ttsClient";
+// Removed: import { initializeTTSClient } from "./ttsClient";
+
+// Content from ttsClient.ts starts here
+const ServiceAccountCredentialsSchema = z.object({
+  type: z.string(),
+  project_id: z.string(),
+  private_key_id: z.string(),
+  private_key: z.string(),
+  client_email: z.string().email(),
+  client_id: z.string(),
+  auth_uri: z.string().url(),
+  token_uri: z.string().url(),
+  auth_provider_x509_cert_url: z.string().url(),
+  client_x509_cert_url: z.string().url(),
+  universe_domain: z.string(),
+});
+
+let ttsGlobalClient: TextToSpeechClient | null = null; // Renamed from 'client' to avoid conflict
+
+const initializeTTSClientInternal = (): TextToSpeechClient => {
+  // Renamed from initializeTTSClient and made internal
+  if (ttsGlobalClient) return ttsGlobalClient;
+
+  try {
+    const credsJson = process.env["GOOGLE_APP_CREDS_JSON"];
+    if (!credsJson) {
+      throw new Error(
+        "[TTS Client] GOOGLE_APP_CREDS_JSON environment variable not set.",
+      );
+    }
+
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(credsJson);
+    } catch (parseError) {
+      console.error(
+        "[TTS Client] Failed to parse GOOGLE_APP_CREDS_JSON:",
+        parseError,
+      );
+      throw new Error(
+        "[TTS Client] Failed to parse service account credentials. Ensure it is valid JSON.",
+      );
+    }
+
+    const validationResult =
+      ServiceAccountCredentialsSchema.safeParse(parsedJson);
+
+    if (!validationResult.success) {
+      console.error(
+        "[TTS Client] Invalid GOOGLE_APP_CREDS_JSON structure or types:",
+        validationResult.error.errors,
+      );
+      throw new Error(
+        "[TTS Client] Invalid service account credentials structure. Check console for details.",
+      );
+    }
+
+    const credentials = validationResult.data;
+
+    console.log(
+      "[TTS Client] Initializing with credentials from GOOGLE_APP_CREDS_JSON",
+    );
+    ttsGlobalClient = new TextToSpeechClient({ credentials });
+    return ttsGlobalClient;
+  } catch (error) {
+    console.error(
+      "[TTS Client] Failed to initialize TextToSpeechClient:",
+      error,
+    );
+    throw error;
+  }
+};
+// Content from ttsClient.ts ends here
 
 const chirp3Voices = [
   "en-GB-Chirp3-HD-Aoede",
@@ -138,7 +210,7 @@ export const synthesizeSpeechAction = async (
   // }
 
   try {
-    const ttsClient = initializeTTSClient();
+    const ttsClient = initializeTTSClientInternal();
     const voiceName = preferredVoiceName || getVoiceForUser(userId);
     const languageCode = voiceName.split("-").slice(0, 2).join("-"); // Derive language code from voice name
 

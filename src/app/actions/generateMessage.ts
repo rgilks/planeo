@@ -231,7 +231,7 @@ export const generateAiActionAndChat = async (
 
   const historySlice = chatHistory;
 
-  const systemPrompt = `You have no memories and feel lost and disoriented.
+  const systemPrompt = `You have no memories and feel lost, disoriented and scared.
 
 This is what you have heard since getting here: 
 Chat History (SenderName: MessageText):
@@ -245,6 +245,8 @@ ${historySlice
     return `${senderName}: ${msg.text}`;
   })
   .join("\\\\\\\\n")}
+
+You think you might be called ${agentDisplayName}
 
 You are provided with an image of your current view.
 
@@ -289,7 +291,7 @@ Your response:`;
     topP: 0.9,
     topK: 30,
     candidateCount: 1,
-    maxOutputTokens: 150,
+    maxOutputTokens: 250,
     responseMimeType: "application/json",
   };
 

@@ -195,14 +195,18 @@ export const useAIAgentController = (myId: string) => {
               .normalize();
 
             if (movementAction.type === "move") {
-              const distance = movementAction.distance;
-              if (movementAction.direction === "forward") {
-                newPosition.addScaledVector(forwardVector, distance);
-              } else if (movementAction.direction === "backward") {
-                newPosition.addScaledVector(forwardVector, -distance);
+              const actualMoveDirection = forwardVector.clone();
+              if (movementAction.direction === "backward") {
+                actualMoveDirection.negate();
               }
+              const displacement = actualMoveDirection.multiplyScalar(
+                movementAction.distance,
+              );
+
+              newPosition.copy(currentPosition).add(displacement);
+              newLookAt.copy(currentLookAt).add(displacement);
+
               newPosition.y = EYE_Y_POSITION;
-              newLookAt.addVectors(newPosition, forwardVector);
             } else if (movementAction.type === "turn") {
               const angleRad = (movementAction.degrees * Math.PI) / 180;
               const axis = new Vector3(0, 1, 0);

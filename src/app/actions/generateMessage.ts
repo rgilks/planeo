@@ -10,6 +10,7 @@ import { z } from "zod";
 import { AIResponseSchema, type ParsedAIResponse } from "@/domain/aiAction";
 import { isAIAgentId, getAIAgentById } from "@/domain/aiAgent";
 import { Message, MessageSchema } from "@/domain/message";
+import { generateAudio } from "@/lib/audioService";
 import {
   getGoogleAIClient,
   getActiveVisionModel,
@@ -262,7 +263,9 @@ Your response:`;
         validatedResponse.data,
       );
 
+      let audioSrc: string | undefined;
       if (validatedResponse.data.chatMessage) {
+        audioSrc = await generateAudio(validatedResponse.data.chatMessage);
         const aiChatMessage: Message = {
           id: uuidv4(),
           userId: aiAgentId,
@@ -272,7 +275,7 @@ Your response:`;
         };
         postChatMessageToEvents(aiChatMessage);
       }
-      return validatedResponse.data;
+      return { ...validatedResponse.data, audioSrc };
     } else {
       console.error(
         `AI Action/Chat: Failed to validate AI JSON for ${agentDisplayName}:`,

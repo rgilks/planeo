@@ -30,6 +30,7 @@ export type AIAction = z.infer<typeof AIActionSchema>;
 export const AIResponseSchema = z.object({
   chatMessage: z.string().optional(),
   action: AIActionSchema,
+  audioSrc: z.string().optional(),
 });
 
 export type ParsedAIResponse = z.infer<typeof AIResponseSchema>;

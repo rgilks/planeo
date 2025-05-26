@@ -1,7 +1,12 @@
 "use client";
 
+import { nanoid } from "nanoid";
+
+import { type ChatMessageEventType } from "@/domain/event";
+import { useEventStore } from "@/stores/eventStore";
 import { useMessageStore } from "@/stores/messageStore";
 
+import { ChatInput } from "./ChatInput";
 import { ChatMessage } from "./ChatMessage";
 
 interface ChatWindowProps {
@@ -10,6 +15,23 @@ interface ChatWindowProps {
 
 export const ChatWindow = ({ myId }: ChatWindowProps) => {
   const messages = useMessageStore((s) => s.messages);
+  const addMessage = useMessageStore((s) => s.addMessage);
+  const { sendChatMessage } = useEventStore.getState();
+
+  const handleSendMessage = (text: string) => {
+    const newMessage: ChatMessageEventType = {
+      id: nanoid(),
+      userId: myId,
+      name: "User",
+      text,
+      timestamp: Date.now(),
+      type: "chatMessage" as const,
+    };
+
+    addMessage(newMessage);
+
+    sendChatMessage(newMessage);
+  };
 
   return (
     <div
@@ -29,6 +51,7 @@ export const ChatWindow = ({ myId }: ChatWindowProps) => {
           <ChatMessage key={msg.id} message={msg} currentUserId={myId} />
         ))}
       </div>
+      <ChatInput onSendMessage={handleSendMessage} />
     </div>
   );
 };

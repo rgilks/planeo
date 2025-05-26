@@ -10,6 +10,7 @@ import {
   EventSchema,
   EyeUpdateType,
   ChatMessageEventType,
+  ChatMessageEventSchema,
 } from "@/domain/event";
 import { throttle } from "@/lib/utils";
 
@@ -53,6 +54,7 @@ interface EventStoreActions {
   ) => () => void;
   subscribeBoxEvents: (callback: BoxEventListener) => () => void;
   sendBoxUpdate: (boxUpdate: ValidatedBoxUpdatePayloadType) => Promise<void>;
+  sendChatMessage: (message: ChatMessageEventType) => Promise<void>;
   _handleMessage: (event: MessageEvent) => void;
   _handleError: (event: Event) => void;
 }
@@ -208,6 +210,51 @@ export const useEventStore = create<EventStoreState & EventStoreActions>()(
     sendBoxUpdate: async (boxUpdate: ValidatedBoxUpdatePayloadType) => {
       useBoxStore.getState().optimisticallySetBoxState(boxUpdate);
       get().throttledSendBoxUpdate(boxUpdate);
+    },
+
+    sendChatMessage: async (message: ChatMessageEventType) => {
+      if (!get().isConnected) {
+        console.warn(
+          "Attempted to send chat message while not connected. Ignoring.",
+        );
+        return;
+      }
+
+      const parsedPayload = ChatMessageEventSchema.safeParse(message);
+      if (!parsedPayload.success) {
+        console.error(
+          "Invalid chat message payload before sending:",
+          parsedPayload.error.flatten(),
+        );
+        set({ lastError: "Invalid chat message payload formation" });
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/events", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(parsedPayload.data),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error(
+            "Failed to send chat message to server:",
+            response.status,
+            errorData,
+          );
+          set({
+            lastError: `Server error sending chat message: ${response.status}`,
+          });
+        } else {
+        }
+      } catch (error) {
+        console.error("Network error sending chat message:", error);
+        set({ lastError: "Network error sending chat message" });
+      }
     },
 
     _handleMessage: (event: MessageEvent) => {
